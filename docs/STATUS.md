@@ -2,7 +2,7 @@
 
 ## Fase actual
 
-Fase 1 - Fundacion segura.
+Fase 2 - Catalogo alimentario operativo local.
 
 ## Trabajo completado
 
@@ -24,11 +24,18 @@ Fase 1 - Fundacion segura.
 - GitHub security: secret scanning, push protection y Dependabot security updates activados.
 - GitHub repository: borrado automatico de ramas tras merge activado.
 - GitHub `main`: proteccion activada con checks `web` y `database`, historial lineal, sin force-push/deletion y 1 review requerida.
+- Base BEDCA localizada en `/Users/josegonzalez/Documents/Proyectos/NUTRI/data/bedca.xlsx`.
+- Importador BEDCA creado con validacion de columnas, normalizacion de busqueda y proteccion ante formulas de hoja de calculo.
+- Catalogo local generado en `data/generated/bedca-foods.json` (ignorado por Git): 957 alimentos validos de 969 filas leidas; 12 filas omitidas por campos obligatorios incompletos.
+- Esquema Supabase de alimentos creado: `food_sources`, `nutrients`, `foods`, `food_nutrients`, `food_synonyms`.
+- RLS de alimentos aplicada para lectura publica solo de alimentos globales verificados y acceso por organizacion para alimentos privados.
+- Pantalla profesional `/es/profesional/alimentos` implementada con busqueda, filtro por categoria y tabla nutricional.
 
 ## Trabajo pendiente
 
 - Validacion clinica, ISAK y juridica por profesionales humanos antes de produccion.
-- CI remoto de la PR debe volver a pasar tras el commit de Dependabot.
+- Revision de licencia BEDCA antes de distribuir datos o usarlos en produccion.
+- CI remoto de la PR debe volver a pasar tras los commits de catalogo alimentario.
 
 ## Bloqueos
 
@@ -37,28 +44,30 @@ Fase 1 - Fundacion segura.
 ## Riesgos
 
 - Aplicacion sanitaria: no afirmar cumplimiento legal ni suficiencia clinica sin revision externa.
-- Fase 1 no cubre todas las funcionalidades de producto; solo fundacion segura.
+- El catalogo alimentario no sustituye validacion clinica ni revision dietetica humana.
+- BEDCA esta disponible solo como import local; el XLSX y el JSON generado no se versionan.
 - `psql` no esta instalado fuera de Supabase CLI.
 - `supabase db lint` sobre todos los schemas incluye avisos de la extension pgTAP; lint limitado a `public,private` pasa sin errores.
 
 ## Ultimo commit
 
-- `HEAD` - `chore: configure Dependabot and repository safeguards`.
+- `HEAD` - pendiente de commit local BEDCA/catalogo.
 
 ## Ultimos comandos de validacion ejecutados
 
 - `corepack pnpm format:check`: PASS.
 - `corepack pnpm lint`: PASS.
 - `corepack pnpm typecheck`: PASS.
-- `corepack pnpm test`: PASS, 2 archivos y 6 tests.
-- `corepack pnpm build`: PASS, rutas `/es`, `/ca`, `/login`, `/portal`, `/profesional`.
-- `supabase db reset`: PASS.
-- `supabase test db`: PASS, 1 archivo y 10 tests.
+- `corepack pnpm test`: PASS, 3 archivos y 12 tests.
+- `corepack pnpm build`: PASS, rutas `/es`, `/ca`, `/login`, `/portal`, `/profesional`, `/profesional/alimentos`.
+- `supabase db reset`: PASS con migracion `202607250002_foods_foundation.sql`.
+- `corepack pnpm bedca:import /Users/josegonzalez/Documents/Proyectos/NUTRI/data/bedca.xlsx --database-url=<local Supabase DB_URL>`: PASS, 957 alimentos importados localmente.
+- `supabase test db`: PASS, 1 archivo y 16 tests.
 - `supabase db lint --schema public,private --fail-on error`: PASS.
-- `corepack pnpm test:e2e`: PASS, 4 tests con axe.
+- `corepack pnpm test:e2e`: PASS, 6 tests con axe.
 - `corepack pnpm audit --audit-level moderate`: PASS, sin vulnerabilidades conocidas.
 - Secret scan rapido con `rg`: sin secretos reales; solo referencia `env(OPENAI_API_KEY)` en config local Supabase Studio.
 
 ## Proxima accion automatica
 
-- Continuar con Fase 2 en una rama nueva tras revision/merge de la PR de fundacion.
+- Publicar commits pequenos en la PR existente y revisar CI remoto.

@@ -14,6 +14,14 @@
 - `feature_flags`: modulos opcionales desactivados por defecto.
 - `audit_events`: eventos tecnicos y legales sin contenido clinico completo.
 
+## Catalogo alimentario
+
+- `food_sources`: origen bibliografico o base externa importada.
+- `nutrients`: definicion canonica de nutrientes con unidad y categoria.
+- `foods`: alimentos globales verificados o alimentos privados por organizacion.
+- `food_nutrients`: valores nutricionales por 100 g/ml, con marca de trazas.
+- `food_synonyms`: sinonimos de busqueda por alimento.
+
 ## Principios
 
 UUIDs, `created_at`, `updated_at`, constraints, indices por organizacion/cliente/fecha y RLS en todas las tablas expuestas.

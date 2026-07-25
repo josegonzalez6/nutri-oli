@@ -9,11 +9,13 @@
 - RLS habilitada en tablas publicas.
 - Buckets Storage privados.
 - No hay datos reales ni credenciales demo predecibles.
+- Import BEDCA local sin versionar XLSX ni JSON generado.
+- Textos importados de hojas de calculo se validan y se neutralizan si empiezan como formula.
+- Alimentos globales verificados son de lectura; alimentos privados quedan aislados por organizacion.
 
 ## Pendiente
 
 - CSP estricta por entorno.
 - Rate limiting de mutaciones.
 - Redaccion de PII en logs.
-- Secret scanning en GitHub cuando haya permisos.
-- Dependency audit formal en CI.
+- Revision juridica de licencia BEDCA antes de produccion o distribucion de datos.
