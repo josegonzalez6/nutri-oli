@@ -63,4 +63,4 @@
 
 ## Estado GitHub
 
-No se han creado issues reales porque `gh auth status` devuelve token invalido. Ejecutar `gh auth login -h github.com` fuera del chat y reintentar automatizacion.
+Milestones e issues reales creados en GitHub el 2026-07-25. Este archivo queda como copia documental del backlog por fases.

@@ -16,16 +16,18 @@ Fase 1 - Fundacion segura.
 - CI de pull request/main configurado en `.github/workflows/ci.yml`.
 - Accesibilidad smoke validada con axe en Playwright.
 - Auditoria de dependencias sin vulnerabilidades conocidas tras overrides documentados en `pnpm-workspace.yaml`.
+- Rama `main` inicializada con commit base vacío para permitir PR.
+- Rama `chore/project-foundation` publicada en `origin`.
+- Pull request abierta: `https://github.com/josegonzalez6/nutri-oli/pull/1`.
+- 9 milestones y 32 issues de backlog creados en GitHub.
 
 ## Trabajo pendiente
 
-- Crear issues/milestones reales en GitHub cuando `gh auth` este reparado.
-- Hacer push y abrir PR cuando haya credenciales GitHub validas.
 - Validacion clinica, ISAK y juridica por profesionales humanos antes de produccion.
+- Protecciones de rama, secret scanning y Dependabot quedan pendientes de configuracion administrativa del repositorio si no estan activos.
 
 ## Bloqueos
 
-- `gh auth status` informa token invalido para `josegonzalez6`; no se pueden crear issues ni PR con GitHub CLI hasta reautenticacion.
 - No se han recibido capturas en el repositorio local; se construye identidad original segun especificacion.
 
 ## Riesgos
@@ -37,7 +39,7 @@ Fase 1 - Fundacion segura.
 
 ## Ultimo commit
 
-- `HEAD` - `ci: add foundation validation workflow`.
+- `HEAD` - `docs: record GitHub PR and backlog status`.
 
 ## Ultimos comandos de validacion ejecutados
 
@@ -55,4 +57,4 @@ Fase 1 - Fundacion segura.
 
 ## Proxima accion automatica
 
-- Reautenticar GitHub CLI o credenciales Git para poder crear issues, hacer push y abrir PR.
+- Continuar con Fase 2 en una rama nueva tras revision/merge de la PR de fundacion.
