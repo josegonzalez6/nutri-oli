@@ -1,0 +1,19 @@
+# Data Model
+
+## Nucleo Fase 1
+
+- `organizations`: consulta/organizacion.
+- `profiles`: perfil aplicativo enlazado a `auth.users`.
+- `organization_members`: rol y permisos por organizacion.
+- `professional_profiles`: datos profesionales.
+- `clients`: ficha minima de cliente.
+- `client_profiles`: enlace portal cliente a usuario Auth.
+- `client_assignments`: asignacion profesional-cliente.
+- `services`: tipos de servicio.
+- `appointments`: agenda inicial.
+- `feature_flags`: modulos opcionales desactivados por defecto.
+- `audit_events`: eventos tecnicos y legales sin contenido clinico completo.
+
+## Principios
+
+UUIDs, `created_at`, `updated_at`, constraints, indices por organizacion/cliente/fecha y RLS en todas las tablas expuestas.
