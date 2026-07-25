@@ -13,7 +13,7 @@ Fase 1 - Fundacion segura.
 - Supabase local inicializado con migracion nucleo, RLS, buckets privados y seed ficticio minimo.
 - Documentacion inicial obligatoria creada.
 - Backlog por fases documentado en `docs/BACKLOG.md`.
-- CI de pull request/main configurado en `.github/workflows/ci.yml`.
+- CI de pull request/main configurado en `.github/workflows/ci.yml` con orden de Corepack corregido para cache pnpm.
 - Accesibilidad smoke validada con axe en Playwright.
 - Auditoria de dependencias sin vulnerabilidades conocidas tras overrides documentados en `pnpm-workspace.yaml`.
 - Rama `main` inicializada con commit base vacío para permitir PR.
@@ -39,7 +39,7 @@ Fase 1 - Fundacion segura.
 
 ## Ultimo commit
 
-- `HEAD` - `docs: record GitHub PR and backlog status`.
+- `HEAD` - `ci: fix pnpm setup and expand validation gates`.
 
 ## Ultimos comandos de validacion ejecutados
 
