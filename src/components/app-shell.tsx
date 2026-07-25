@@ -1,5 +1,13 @@
 import Link from "next/link";
-import { CalendarDays, ClipboardList, FileText, Home, MessageSquare, Users } from "lucide-react";
+import {
+  Apple,
+  CalendarDays,
+  ClipboardList,
+  FileText,
+  Home,
+  MessageSquare,
+  Users
+} from "lucide-react";
 import type { ReactNode } from "react";
 
 import type { Locale } from "@/i18n/routing";
@@ -36,6 +44,14 @@ export function AppShell({
       href: `/${locale}/${basePath}#planes`,
       label: "Planes",
       icon: <ClipboardList aria-hidden="true" />
+    },
+    {
+      href:
+        section === "professional"
+          ? `/${locale}/profesional/alimentos`
+          : `/${locale}/${basePath}#plan`,
+      label: "Alimentos",
+      icon: <Apple aria-hidden="true" />
     },
     {
       href: `/${locale}/${basePath}#mensajes`,

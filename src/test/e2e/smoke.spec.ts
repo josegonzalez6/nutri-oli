@@ -18,3 +18,12 @@ test("client portal exposes only published-client framing", async ({ page }) => 
   await expect(page.getByText("Solo versiones publicadas por el profesional.")).toBeVisible();
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
 });
+
+test("professional food catalog supports search and remains accessible", async ({ page }) => {
+  await page.goto("/es/profesional/alimentos");
+
+  await expect(page.getByRole("heading", { name: "Catalogo de alimentos" })).toBeVisible();
+  await page.getByLabel("Buscar alimento").fill("aceite");
+  await expect(page.getByRole("row", { name: /Aceite de oliva/i }).first()).toBeVisible();
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+});

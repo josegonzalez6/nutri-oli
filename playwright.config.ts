@@ -1,16 +1,18 @@
 import { defineConfig, devices } from "@playwright/test";
 
+const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3017";
+
 export default defineConfig({
   testDir: "./src/test/e2e",
   timeout: 30_000,
   use: {
-    baseURL: "http://127.0.0.1:3017",
+    baseURL,
     trace: "on-first-retry"
   },
   webServer: {
     command: "./node_modules/.bin/next dev --hostname 127.0.0.1 --port 3017",
-    url: "http://127.0.0.1:3017/es/profesional",
-    reuseExistingServer: false,
+    url: `${baseURL}/es/profesional`,
+    reuseExistingServer: !process.env.CI,
     timeout: 120_000
   },
   projects: [
