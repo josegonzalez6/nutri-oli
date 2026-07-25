@@ -20,11 +20,15 @@ Fase 1 - Fundacion segura.
 - Rama `chore/project-foundation` publicada en `origin`.
 - Pull request abierta: `https://github.com/josegonzalez6/nutri-oli/pull/1`.
 - 9 milestones y 32 issues de backlog creados en GitHub.
+- Dependabot configurado para npm y GitHub Actions.
+- GitHub security: secret scanning, push protection y Dependabot security updates activados.
+- GitHub repository: borrado automatico de ramas tras merge activado.
+- GitHub `main`: proteccion activada con checks `web` y `database`, historial lineal, sin force-push/deletion y 1 review requerida.
 
 ## Trabajo pendiente
 
 - Validacion clinica, ISAK y juridica por profesionales humanos antes de produccion.
-- Protecciones de rama, secret scanning y Dependabot quedan pendientes de configuracion administrativa del repositorio si no estan activos.
+- CI remoto de la PR debe volver a pasar tras el commit de Dependabot.
 
 ## Bloqueos
 
@@ -39,7 +43,7 @@ Fase 1 - Fundacion segura.
 
 ## Ultimo commit
 
-- `HEAD` - `ci: fix pnpm setup and expand validation gates`.
+- `HEAD` - `chore: configure Dependabot and repository safeguards`.
 
 ## Ultimos comandos de validacion ejecutados
 
