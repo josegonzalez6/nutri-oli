@@ -24,7 +24,17 @@ jobs:
       - run: corepack pnpm build
       - run: corepack pnpm audit --audit-level moderate
       - run: corepack pnpm exec playwright install --with-deps chromium
+      - uses: supabase/setup-cli@v2
+        with:
+          version: latest
+      - run: supabase db start
+      - run: supabase db reset
       - run: corepack pnpm test:e2e
+        env:
+          NUTRI_OLI_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:54332/postgres
+          NUTRI_OLI_ORGANIZATION_ID: 00000000-0000-4000-8000-000000000001
+          NUTRI_OLI_PROFILE_ID: 00000000-0000-4000-8000-000000000010
+          NUTRI_OLI_PROFESSIONAL_PROFILE_ID: 00000000-0000-4000-8000-000000000020
 
   database:
     runs-on: ubuntu-latest
