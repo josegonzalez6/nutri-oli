@@ -12,10 +12,13 @@
 - Import BEDCA local sin versionar XLSX ni JSON generado.
 - Textos importados de hojas de calculo se validan y se neutralizan si empiezan como formula.
 - Alimentos globales verificados son de lectura; alimentos privados quedan aislados por organizacion.
+- Clientes/citas en PR #40 tienen integridad multi-organizacion por FKs compuestas y tests RLS de mutaciones cross-org denegadas.
+- Storage privado usa helper con validacion UUID antes de castear el primer segmento de path.
 
 ## Pendiente
 
 - CSP estricta por entorno.
 - Rate limiting de mutaciones.
 - Redaccion de PII en logs.
+- Autorizacion real por sesion Supabase en Server Components y Server Actions.
 - Revision juridica de licencia BEDCA antes de produccion o distribucion de datos.

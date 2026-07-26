@@ -15,7 +15,12 @@ select has_table('public', 'food_nutrients', 'food nutrients table exists');
 select policies_are(
   'public',
   'clients',
-  array['clients_professional_select', 'clients_professional_mutate'],
+  array[
+    'clients_authorized_select',
+    'clients_owner_delete',
+    'clients_professional_insert',
+    'clients_professional_update'
+  ],
   'clients table has explicit RLS policies'
 );
 

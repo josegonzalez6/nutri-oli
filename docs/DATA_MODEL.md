@@ -29,6 +29,8 @@
 - `appointment_status_history`: historial append-only de creacion y cambios de estado de citas.
 - `appointments`: constraint `appointments_no_professional_overlap` impide dobles reservas activas
   (`requested`, `confirmed`) por profesional.
+- Integridad multi-organizacion: FKs compuestas `(organization_id, id)` evitan citas/asignaciones
+  que mezclen cliente, profesional o servicio de otra organizacion.
 - `audit_events`: registra mutaciones de clientes, servicios, disponibilidad y citas sin guardar
   contenido clinico completo en metadata.
 
