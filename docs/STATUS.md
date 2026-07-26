@@ -2,7 +2,7 @@
 
 ## Fase actual
 
-Fase 2 - Dashboard operativo, clientes y agenda.
+Fase 2 - Clientes + agenda persistente con Supabase.
 
 ## Trabajo completado
 
@@ -39,16 +39,26 @@ Fase 2 - Dashboard operativo, clientes y agenda.
 - Capturas responsive de dashboard generadas en `docs/pr-1-review/`.
 - Login corregido: ya no muestra boton submit ni formulario sin accion persistente.
 - Playwright e2e corregido para ejecutar contra `next start` tras build.
+- PR #1 no se pudo fusionar desde Codex porque GitHub exige 1 approving review con permisos de escritura.
+- Rama `feat/persistent-clients-agenda` creada sobre `chore/project-foundation`.
+- Dashboard profesional `/es/profesional` conectado a Supabase; sin fixtures de produccion.
+- CRUD real de clientes en `/es/profesional/clientes` con Server Actions, validacion Zod, auditoria y estados loading/empty/error/configuracion pendiente.
+- Agenda real en `/es/profesional/agenda` con servicios configurables, disponibilidad profesional, citas, estados de cita e historial de cambios.
+- Migracion `202607260001_clients_agenda_persistence.sql` creada con `professional_availability`, `availability_exceptions`, `appointment_status_history`, grants explicitos, policies RLS y constraint anti-solape `appointments_no_professional_overlap`.
+- Seed ficticio de desarrollo/test ampliado con usuario demo, profesional demo, clientes demo, servicios, disponibilidad y citas. No contiene datos reales de pacientes.
+- CI web actualizado para ejecutar E2E contra Supabase local configurado con los IDs ficticios de seed.
 
 ## Trabajo pendiente
 
 - Validacion clinica, ISAK y juridica por profesionales humanos antes de produccion.
 - Revision de licencia BEDCA antes de distribuir datos o usarlos en produccion.
-- CI remoto de la PR debe volver a pasar tras los commits de review final.
+- Autenticacion real y sesion de usuario siguen pendientes; las variables server-only seleccionan workspace demo/local para la vertical actual.
+- El portal cliente, planes, mensajes y documentos siguen siendo demo/no persistentes.
+- CI remoto de la nueva PR debe pasar tras publicar la rama.
 
 ## Bloqueos
 
-- No hay bloqueos tecnicos para fusionar PR #1 cuando CI remoto vuelva a pasar y GitHub permita squash merge.
+- PR #1 esta bloqueado por regla de rama: GitHub requiere 1 approving review de un usuario con permisos de escritura antes del squash merge.
 
 ## Riesgos
 
@@ -57,29 +67,30 @@ Fase 2 - Dashboard operativo, clientes y agenda.
 - BEDCA esta disponible solo como import local; el XLSX y el JSON generado no se versionan.
 - Las funciones de competidores estan documentadas como evidencia publica anunciada/observada, no como verificacion tecnica interna.
 - IA, pagos, facturacion, vademecum farmaco-nutriente, apps nativas y colectividades quedan fuera del MVP.
-- Dashboard, portal y catalogo siguen siendo demo/local; no persisten mutaciones desde UI en PR #1.
+- Dashboard, clientes y agenda ya leen/escriben Supabase en esta rama; portal, planes, mensajes y documentos siguen siendo demo/no persistentes.
+- El acceso applicativo actual usa configuracion server-only de workspace profesional; RLS esta implementado y probado en SQL, pero falta conectar Auth real a las queries de usuario final.
 - `psql` no esta instalado fuera de Supabase CLI.
 - `supabase db lint` sobre todos los schemas incluye avisos de la extension pgTAP; lint limitado a `public,private` pasa sin errores.
 
 ## Ultimo commit
 
-- `HEAD` - `9f89e00 feat: add operational professional dashboard`; cambios locales de review final pendientes de commit.
+- Cambios locales de `feat/persistent-clients-agenda` pendientes de commits pequeños.
 
 ## Ultimos comandos de validacion ejecutados
 
 - `corepack pnpm format:check`: PASS.
 - `corepack pnpm lint`: PASS.
 - `corepack pnpm typecheck`: PASS.
-- `corepack pnpm test`: PASS, 4 archivos y 15 tests.
-- `corepack pnpm build`: PASS, rutas `/es`, `/ca`, `/login`, `/portal`, `/profesional`, `/profesional/alimentos`.
-- `supabase db reset`: PASS con migracion `202607250002_foods_foundation.sql`.
+- `corepack pnpm test`: PASS, 4 archivos y 14 tests.
+- `corepack pnpm build`: PASS, rutas dinamicas `/[locale]/profesional`, `/[locale]/profesional/agenda`, `/[locale]/profesional/clientes`.
+- `supabase db reset`: PASS con migraciones `202607250001_foundation.sql`, `202607250002_foods_foundation.sql` y `202607260001_clients_agenda_persistence.sql`.
 - `corepack pnpm bedca:import /Users/josegonzalez/Documents/Proyectos/NUTRI/data/bedca.xlsx --database-url=<local Supabase DB_URL>`: PASS, 957 alimentos importados localmente.
-- `supabase test db`: PASS, 1 archivo y 16 tests.
+- `supabase test db`: PASS, 2 archivos y 30 tests.
 - `supabase db lint --schema public,private --fail-on error`: PASS.
-- `corepack pnpm test:e2e`: PASS, 10 tests con axe.
+- `corepack pnpm test:e2e`: PASS, 14 tests en Chromium y mobile con axe; valida CRUD cliente y cita persistente.
 - `corepack pnpm audit --audit-level moderate`: PASS, sin vulnerabilidades conocidas.
 - Secret scan rapido con `rg`: sin secretos reales; solo referencia `env(OPENAI_API_KEY)` en config local Supabase Studio.
 
 ## Proxima accion automatica
 
-- Publicar commit de review final en la PR existente, revisar CI remoto, fusionar por squash y empezar Clientes + Agenda persistente en una rama nueva.
+- Hacer commit/push de `feat/persistent-clients-agenda` y abrir PR apilada sobre `chore/project-foundation` mientras PR #1 siga bloqueada.

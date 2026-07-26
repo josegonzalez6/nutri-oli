@@ -22,6 +22,16 @@
 - `food_nutrients`: valores nutricionales por 100 g/ml, con marca de trazas.
 - `food_synonyms`: sinonimos de busqueda por alimento.
 
+## Clientes y agenda persistente
+
+- `professional_availability`: franjas semanales activas por profesional y organizacion.
+- `availability_exceptions`: bloqueos puntuales de disponibilidad profesional.
+- `appointment_status_history`: historial append-only de creacion y cambios de estado de citas.
+- `appointments`: constraint `appointments_no_professional_overlap` impide dobles reservas activas
+  (`requested`, `confirmed`) por profesional.
+- `audit_events`: registra mutaciones de clientes, servicios, disponibilidad y citas sin guardar
+  contenido clinico completo en metadata.
+
 ## Principios
 
 UUIDs, `created_at`, `updated_at`, constraints, indices por organizacion/cliente/fecha y RLS en todas las tablas expuestas.
