@@ -18,8 +18,8 @@ Leyenda: `MUST` bloquea MVP; `SHOULD` aporta valor alto; `COULD` se prepara sin 
 ### Fase 2 - Clientes y agenda
 
 - Issue 7 [MUST]: Dashboard profesional operativo con proxima cita, agenda del dia, mensajes, planes, consentimientos, tareas y accesos rapidos.
-- Issue 8 [MUST]: CRUD de clientes con validacion Zod, busqueda, filtros, etiquetas, estado, contacto minimo y auditoria.
-- Issue 9 [MUST]: Agenda diaria/semanal/mensual con servicios, modalidad, estados, notas administrativas y prevencion de doble reserva.
+- Issue 8 [MUST] [EN RAMA]: CRUD de clientes con validacion Zod, estado, contacto minimo y auditoria; busqueda, filtros y etiquetas quedan pendientes.
+- Issue 9 [MUST] [EN RAMA]: Agenda persistente con servicios, disponibilidad, modalidad, estados, notas administrativas, historial y prevencion de doble reserva; vistas semanal/mensual quedan pendientes.
 - Issue 10 [MUST]: Invitaciones de cliente con token de un solo uso, caducidad y sin contrasenas conocidas por profesional.
 - Issue 10.1 [SHOULD]: Centro de consulta guiada inicial desde dashboard/cita/cliente.
 - Issue 10.2 [SHOULD]: Portal base con funciones habilitables por cliente.

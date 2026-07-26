@@ -8,7 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "find .next/types -name '* [0-9]*.ts' -delete 2>/dev/null || true; tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
@@ -32,6 +32,7 @@
     "react-dom": "^19.2.8",
     "react-hook-form": "^7.82.0",
     "read-excel-file": "^9.3.4",
+    "server-only": "^0.0.1",
     "tailwind-merge": "^3.6.0",
     "zod": "^4.4.3"
   },
