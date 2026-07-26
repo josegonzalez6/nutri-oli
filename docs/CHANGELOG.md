@@ -8,3 +8,5 @@
 - Benchmark funcional competitivo, matriz de prioridades y dashboard profesional operativo de Fase 2.
 - Clientes y agenda persistentes con Supabase: CRUD de clientes, servicios, disponibilidad, citas,
   historial de estados, auditoria, anti-solape y pruebas RLS/E2E.
+- Foundation clinica persistente: ficha de cliente, anamnesis inicial, consultas borrador/finalizadas,
+  addenda SQL, antropometria inicial, timeline, Auth real iniciada y pruebas RLS/E2E.

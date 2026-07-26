@@ -2,7 +2,7 @@
 
 ## Fase actual
 
-Fase 0 - Normalizacion de integracion antes de nuevas verticales.
+Fase 3-6 parcial - Foundation clinica apilada sobre PR #40 mientras PR #1 sigue bloqueado por review humana.
 
 ## Trabajo completado
 
@@ -57,13 +57,28 @@ Fase 0 - Normalizacion de integracion antes de nuevas verticales.
 - Agentes paralelos lanzados para revision tecnica/producto y seguridad/RLS de la integracion actual.
 - Revision tecnica/producto y revision de seguridad/RLS completadas; ambas recomiendan no abrir nuevas verticales hasta normalizar PR #1/#40.
 - Migracion `202607260002_integrity_and_rls_hardening.sql` creada para reforzar integridad multi-organizacion, RLS de clientes por asignacion, mutaciones cross-org denegadas y Storage path parsing seguro.
+- Rama `feat/clinical-workflow-foundation` creada sobre `feat/persistent-clients-agenda` por bloqueo humano de PR #1.
+- Layout profesional redisenado con sidebar, acciones rapidas, breadcrumbs, buscador global y navegacion limitada a modulos con superficie util.
+- Auth real iniciada con Supabase Auth para login/logout y middleware server-side; el bypass de identidad solo queda permitido con `NUTRI_OLI_ALLOW_DEV_AUTH_BYPASS=true` en desarrollo/test.
+- Repositorio server-side conectado a contexto de sesion profesional mediante `auth.getUser()` cuando Supabase Auth esta configurado; las queries de negocio ejecutan transacciones como rol `authenticated` con claim `sub` para ejercer RLS.
+- Ficha clinica persistente creada en `/es/profesional/clientes/[id]` con cabecera profesional, resumen, historia clinica/nutricional, consultas, antropometria y timeline.
+- Migracion `202607260003_clinical_workflow_foundation.sql` creada con `clinical_intake_templates`, `clinical_intake_responses`, `consultations`, `consultation_addenda` y `anthropometry_sessions`.
+- RLS clinico aplicado: owner/nutritionist asignado accede; assistant no puede leer anamnesis/consultas/antropometria; finalized consultations son inmutables y solo admiten addenda.
+- Anamnesis persistente implementada como borrador versionable inicial con campos declarados y nota profesional.
+- Consulta persistente implementada con borrador/finalizado, ADIME/PES opcional, nota privada, resumen compartido y auditoria.
+- Antropometria persistente implementada con masa, talla, cintura, cadera, pliegues iniciales, protocolo, instrumento/calibracion y calculos basicos generados por SQL: IMC, cintura/talla y sumatorio de pliegues.
+- Timeline de cliente muestra citas, anamnesis, consultas y sesiones antropometricas persistentes.
+- E2E valida abrir cliente persistente, guardar anamnesis, recargar, guardar consulta, recargar, guardar antropometria, recargar y comprobar calculos basicos.
 
 ## Trabajo pendiente
 
 - Validacion clinica, ISAK y juridica por profesionales humanos antes de produccion.
 - Revision de licencia BEDCA antes de distribuir datos o usarlos en produccion.
-- Autenticacion real y sesion de usuario siguen pendientes; las variables server-only seleccionan workspace demo/local para la vertical actual.
-- El portal cliente, planes, mensajes y documentos siguen siendo demo/no persistentes.
+- Completar Auth real: invitaciones, recuperacion, verificacion, MFA profesional, revocacion, proteccion estricta por rol y portal cliente autenticado.
+- El portal cliente, planes, recetas, equivalencias, mensajes, documentos, consentimientos, notificaciones y PDFs siguen sin vertical persistente operativa.
+- Ampliar antropometria con biblioteca configurable de medidas, repeticiones, discrepancias, TEM, ecuaciones validadas, comparativas y PDF.
+- Convertir anamnesis en plantillas editables/enviables al portal con versionado completo.
+- Convertir consultas finalizadas en documentos compartibles con addenda UI y adjuntos.
 - Corregir o revisar en PR #40 cualquier hallazgo de seguridad restante antes de retargetear/fusionar.
 - No abrir una tercera vertical apilada hasta resolver PR #1 o definir una estrategia explicita que no agrave dependencias.
 
@@ -82,8 +97,9 @@ Fase 0 - Normalizacion de integracion antes de nuevas verticales.
 - Dashboard, clientes y agenda ya leen/escriben Supabase en esta rama; portal, planes, mensajes y documentos siguen siendo demo/no persistentes.
 - El acceso applicativo actual usa configuracion server-only de workspace profesional; RLS esta implementado y probado en SQL, pero falta conectar Auth real a las queries de usuario final.
 - `main` sigue en el commit base `65117ed`; la fundacion real del producto aun no esta integrada.
-- Seguir implementando Auth encima de PR #40 crearia una tercera PR apilada, contrario al prompt maestro mientras no exista estrategia explicita.
-- PR #40 sigue sin Auth real por sesion; no debe considerarse autorizacion end-to-end desde la app hasta eliminar workspace server-only por variables.
+- La nueva rama es una tercera PR apilada por instruccion explicita de continuar; depende de la integracion de PR #1 y PR #40.
+- Auth esta iniciada pero no completa: no hay MFA, invitaciones, recuperacion, revocacion ni portal autenticado funcional.
+- En macOS/Colima local, el stack completo de Supabase fallo al arrancar `vector` por montaje de Docker socket y Storage quedo inestable; la validacion Auth/E2E se ejecuto con DB, Kong y Auth, excluyendo servicios no usados por esta vertical.
 - `psql` no esta instalado fuera de Supabase CLI.
 - `supabase db lint` sobre todos los schemas incluye avisos de la extension pgTAP; lint limitado a `public,private` pasa sin errores.
 
@@ -96,16 +112,16 @@ Fase 0 - Normalizacion de integracion antes de nuevas verticales.
 - `corepack pnpm format:check`: PASS.
 - `corepack pnpm lint`: PASS.
 - `corepack pnpm typecheck`: PASS.
-- `corepack pnpm test`: PASS, 4 archivos y 14 tests.
-- `corepack pnpm build`: PASS, rutas dinamicas `/[locale]/profesional`, `/[locale]/profesional/agenda`, `/[locale]/profesional/clientes`.
+- `corepack pnpm test`: PASS, 5 archivos y 17 tests.
+- `corepack pnpm build`: PASS, rutas dinamicas `/[locale]/profesional`, `/[locale]/profesional/agenda`, `/[locale]/profesional/clientes`, `/[locale]/profesional/clientes/[id]`.
 - `supabase db reset`: PASS con migraciones `202607250001_foundation.sql`, `202607250002_foods_foundation.sql`, `202607260001_clients_agenda_persistence.sql` y `202607260002_integrity_and_rls_hardening.sql`.
 - `corepack pnpm bedca:import /Users/josegonzalez/Documents/Proyectos/NUTRI/data/bedca.xlsx --database-url=<local Supabase DB_URL>`: PASS, 957 alimentos importados localmente.
-- `supabase test db`: PASS, 2 archivos y 36 tests.
+- `supabase test db`: PASS, 3 archivos y 49 tests.
 - `supabase db lint --schema public,private --fail-on error`: PASS.
-- `corepack pnpm test:e2e`: PASS, 14 tests en Chromium y mobile con axe; valida CRUD cliente y cita persistente.
+- `corepack pnpm test:e2e`: PASS, 16 tests en Chromium y mobile con axe, Supabase Auth real local y `auth.getUser()`; valida login, CRUD cliente, cita persistente y flujo clinico persistente con recarga.
 - `corepack pnpm audit --audit-level moderate`: PASS, sin vulnerabilidades conocidas.
-- Secret scan rapido con `rg`: sin secretos reales; solo referencia `env(OPENAI_API_KEY)` en config local Supabase Studio.
+- Secret scan rapido con `rg`: sin secretos reales; solo placeholders en `.env.example` y referencias `env(...)` de Supabase local.
 
 ## Proxima accion automatica
 
-- Mantener PR #1 y PR #40 listas, documentar el bloqueo humano, incorporar revisiones de agentes y no iniciar Auth real hasta que la cadena de integracion quede normalizada o el usuario habilite una estrategia de integracion alternativa.
+- Abrir PR apilada de `feat/clinical-workflow-foundation` contra `feat/persistent-clients-agenda`, documentando dependencia de PR #1/#40 y continuar despues con Auth completa, plantillas de anamnesis y motor nutricional.
