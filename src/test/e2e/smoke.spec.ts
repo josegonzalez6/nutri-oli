@@ -42,7 +42,7 @@ test("professional navigation is reachable by keyboard", async ({ page }) => {
 
   await agendaLink.focus();
   await expect(agendaLink).toBeFocused();
-  await agendaLink.press("Enter");
+  await page.keyboard.press("Enter");
   await expect(page).toHaveURL(/\/es\/profesional\/agenda$/);
 });
 
@@ -147,16 +147,28 @@ test("professional client record persists intake consultation and anthropometry"
   );
 
   const anthropometry = page.locator("section#antropometria");
-  await anthropometry.getByLabel("Masa corporal kg").fill("74.2");
-  await anthropometry.getByLabel("Talla cm").fill("171.5");
-  await anthropometry.getByLabel("Cintura cm").fill("82.4");
-  await anthropometry.getByLabel("Cadera cm").fill("98.1");
-  await anthropometry.getByRole("button", { name: "Guardar sesion" }).click();
-  await expect(page.getByText("Sesion antropometrica guardada.")).toBeVisible();
+  await anthropometry.getByRole("button", { name: "Informacion de Pliegue tricipital" }).click();
+  await expect(anthropometry.getByText("Fuente:").first()).toBeVisible();
+  await anthropometry.getByLabel("Masa corporal primera toma").fill("74.0");
+  await anthropometry.getByLabel("Masa corporal segunda toma").fill("74.4");
+  await anthropometry.getByLabel("Talla primera toma").fill("171.5");
+  await anthropometry.getByLabel("Talla segunda toma").fill("171.6");
+  await anthropometry.getByLabel("Perimetro cintura primera toma").fill("82.4");
+  await anthropometry.getByLabel("Perimetro cintura segunda toma").fill("82.6");
+  await anthropometry.getByLabel("Perimetro cadera primera toma").fill("98.1");
+  await anthropometry.getByLabel("Perimetro cadera segunda toma").fill("98.2");
+  await anthropometry.getByLabel("Pliegue tricipital primera toma").fill("10");
+  await anthropometry.getByLabel("Pliegue tricipital segunda toma").fill("12");
+  await expect(anthropometry.getByText("Tercera necesaria").first()).toBeVisible();
+  await anthropometry.getByLabel("Pliegue tricipital tercera toma").fill("10.5");
+  await anthropometry.getByRole("button", { name: "Guardar borrador" }).click();
+  await expect(page.getByText("Sesion antropometrica guardada como borrador.")).toBeVisible();
 
   await page.reload();
+  await expect(anthropometry.getByLabel("Masa corporal primera toma")).toHaveValue("74");
+  await expect(anthropometry.getByLabel("Pliegue tricipital tercera toma")).toHaveValue("10.5");
   await expect(page.getByText("74,2 kg").first()).toBeVisible();
-  await expect(page.getByText(/25,2[23]/).first()).toBeVisible();
+  await expect(page.getByText(/25,2/).first()).toBeVisible();
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
 });
 
