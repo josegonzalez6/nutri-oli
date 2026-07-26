@@ -29,6 +29,7 @@ jobs:
       - run: |
           supabase status -o env \
             | sed -n 's/^API_URL=/NEXT_PUBLIC_SUPABASE_URL=/p; s/^ANON_KEY=/NEXT_PUBLIC_SUPABASE_ANON_KEY=/p' \
+            | tr -d '"' \
             >> "$GITHUB_ENV"
       - run: corepack pnpm build
       - run: corepack pnpm exec playwright install --with-deps chromium
