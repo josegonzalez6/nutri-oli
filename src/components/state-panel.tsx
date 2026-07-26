@@ -6,11 +6,13 @@ export function StatePanel({
   title,
   description,
   icon,
+  children,
   tone = "neutral"
 }: {
   title: string;
   description: string;
   icon?: ReactNode;
+  children?: ReactNode;
   tone?: StatePanelTone;
 }) {
   const toneClass: Record<StatePanelTone, string> = {
@@ -28,6 +30,7 @@ export function StatePanel({
       {icon ? <div className={`mb-3 ${toneClass[tone]}`}>{icon}</div> : null}
       <h1 className="text-2xl font-semibold">{title}</h1>
       <p className="mt-2 text-sm text-[var(--muted)]">{description}</p>
+      {children}
     </section>
   );
 }
