@@ -2,7 +2,7 @@
 
 ## Fase actual
 
-Fase 3-6 parcial - Foundation clinica apilada sobre PR #40 mientras PR #1 sigue bloqueado por review humana.
+Fase 6 parcial - Flujo antropometrico con mediciones repetidas, apilado sobre PR #41 mientras PR #1/#40 siguen pendientes de integracion humana.
 
 ## Trabajo completado
 
@@ -69,6 +69,17 @@ Fase 3-6 parcial - Foundation clinica apilada sobre PR #40 mientras PR #1 sigue 
 - Antropometria persistente implementada con masa, talla, cintura, cadera, pliegues iniciales, protocolo, instrumento/calibracion y calculos basicos generados por SQL: IMC, cintura/talla y sumatorio de pliegues.
 - Timeline de cliente muestra citas, anamnesis, consultas y sesiones antropometricas persistentes.
 - E2E valida abrir cliente persistente, guardar anamnesis, recargar, guardar consulta, recargar, guardar antropometria, recargar y comprobar calculos basicos.
+- PR #41 inspeccionada el 2026-07-26: base `feat/persistent-clients-agenda`, head `feat/clinical-workflow-foundation`, checks `web` y `database` verdes tras normalizar export de variables Supabase en CI.
+- Rama `feat/anthropometry-measurement-workflow` creada sobre `feat/clinical-workflow-foundation` por bloqueo de integracion de PR #1/#40/#41.
+- Documentacion de evidencia y arquitectura antropometrica creada: `docs/ANTHROPOMETRY_EVIDENCE_REGISTER.md`, `docs/ANTHROPOMETRY_MEASUREMENT_CATALOG.md`, `docs/ANTHROPOMETRY_EQUATION_CATALOG.md`, `docs/ISAK_WORKFLOW_SPEC.md`, `docs/BODY_COMPOSITION_LIMITATIONS.md`, `docs/ENERGY_EQUATION_CATALOG.md`, `docs/EXCHANGE_SYSTEM_SPEC.md`, `docs/MACRO_PORTION_SYSTEM_SPEC.md` y `docs/CLINICAL_CALCULATION_VALIDATION.md`.
+- Migracion `202607260004_anthropometry_measurement_workflow.sql` creada con protocolos, perfiles, catalogo de medidas, tolerancias versionadas, mediciones por sesion, catalogo de ecuaciones, RLS, constraints cross-org/consulta y bloqueo de sesiones cerradas.
+- Sumatorio SQL de pliegues corregido: devuelve `null` si faltan pliegues requeridos; ya no convierte datos ausentes en cero.
+- Motor tipado de mediciones antropometricas creado con parseo seguro de coma/punto, diferencia absoluta/relativa, tolerancia, tercera medicion, mediana provisional, warnings de plausibilidad e indices simples con `No calculable`.
+- Interfaz profesional de antropometria redisenada en la ficha de cliente: perfil compatible ISAK, secciones plegables, primera/segunda/tercera toma, icono de informacion por medida, resumen lateral, comparativa con sesion anterior, guardado persistente y visibilidad cliente inicial.
+- Ecuaciones predictivas avanzadas quedan catalogadas pero deshabilitadas hasta transcripcion, unidades, poblacion, tests numericos y validacion clinica humana.
+- Tests unitarios ampliados para tolerancias, tercera medicion, redondeo, parseo seguro, IMC/cintura-talla y ausencia de ceros inventados.
+- Tests SQL/RLS ampliados para tablas antropometricas, assistant denied, inmutabilidad de sesion completada y sumatorios no calculables.
+- E2E completo valida login real, ficha de cliente, ayuda de medida, discrepancia, tercera toma, guardado, recarga, persistencia y axe en escritorio/movil.
 
 ## Trabajo pendiente
 
@@ -76,7 +87,7 @@ Fase 3-6 parcial - Foundation clinica apilada sobre PR #40 mientras PR #1 sigue 
 - Revision de licencia BEDCA antes de distribuir datos o usarlos en produccion.
 - Completar Auth real: invitaciones, recuperacion, verificacion, MFA profesional, revocacion, proteccion estricta por rol y portal cliente autenticado.
 - El portal cliente, planes, recetas, equivalencias, mensajes, documentos, consentimientos, notificaciones y PDFs siguen sin vertical persistente operativa.
-- Ampliar antropometria con biblioteca configurable de medidas, repeticiones, discrepancias, TEM, ecuaciones validadas, comparativas y PDF.
+- Completar antropometria con TEM, addenda UI, resultados longitudinales avanzados, graficos, PDF, publicacion granular al cliente y ecuaciones predictivas verificadas.
 - Convertir anamnesis en plantillas editables/enviables al portal con versionado completo.
 - Convertir consultas finalizadas en documentos compartibles con addenda UI y adjuntos.
 - Corregir o revisar en PR #40 cualquier hallazgo de seguridad restante antes de retargetear/fusionar.
@@ -98,6 +109,7 @@ Fase 3-6 parcial - Foundation clinica apilada sobre PR #40 mientras PR #1 sigue 
 - El acceso applicativo actual usa configuracion server-only de workspace profesional; RLS esta implementado y probado en SQL, pero falta conectar Auth real a las queries de usuario final.
 - `main` sigue en el commit base `65117ed`; la fundacion real del producto aun no esta integrada.
 - La nueva rama es una tercera PR apilada por instruccion explicita de continuar; depende de la integracion de PR #1 y PR #40.
+- La rama `feat/anthropometry-measurement-workflow` es una cuarta capa apilada y depende de PR #41, que a su vez depende de PR #40.
 - Auth esta iniciada pero no completa: no hay MFA, invitaciones, recuperacion, revocacion ni portal autenticado funcional.
 - En macOS/Colima local, el stack completo de Supabase fallo al arrancar `vector` por montaje de Docker socket y Storage quedo inestable; la validacion Auth/E2E se ejecuto con DB, Kong y Auth, excluyendo servicios no usados por esta vertical.
 - `psql` no esta instalado fuera de Supabase CLI.
@@ -112,16 +124,16 @@ Fase 3-6 parcial - Foundation clinica apilada sobre PR #40 mientras PR #1 sigue 
 - `corepack pnpm format:check`: PASS.
 - `corepack pnpm lint`: PASS.
 - `corepack pnpm typecheck`: PASS.
-- `corepack pnpm test`: PASS, 5 archivos y 17 tests.
+- `corepack pnpm test`: PASS, 6 archivos y 25 tests.
 - `corepack pnpm build`: PASS, rutas dinamicas `/[locale]/profesional`, `/[locale]/profesional/agenda`, `/[locale]/profesional/clientes`, `/[locale]/profesional/clientes/[id]`.
 - `supabase db reset`: PASS con migraciones `202607250001_foundation.sql`, `202607250002_foods_foundation.sql`, `202607260001_clients_agenda_persistence.sql` y `202607260002_integrity_and_rls_hardening.sql`.
 - `corepack pnpm bedca:import /Users/josegonzalez/Documents/Proyectos/NUTRI/data/bedca.xlsx --database-url=<local Supabase DB_URL>`: PASS, 957 alimentos importados localmente.
-- `supabase test db`: PASS, 3 archivos y 49 tests.
+- `supabase test db`: PASS, 3 archivos y 59 tests.
 - `supabase db lint --schema public,private --fail-on error`: PASS.
-- `corepack pnpm test:e2e`: PASS, 16 tests en Chromium y mobile con axe, Supabase Auth real local y `auth.getUser()`; valida login, CRUD cliente, cita persistente y flujo clinico persistente con recarga.
+- `corepack pnpm test:e2e`: PASS, 16 tests en Chromium y mobile con axe, Supabase Auth real local y `auth.getUser()`; valida login, CRUD cliente, cita persistente, ayuda antropometrica, tercera medicion y persistencia con recarga.
 - `corepack pnpm audit --audit-level moderate`: PASS, sin vulnerabilidades conocidas.
 - Secret scan rapido con `rg`: sin secretos reales; solo placeholders en `.env.example` y referencias `env(...)` de Supabase local.
 
 ## Proxima accion automatica
 
-- Abrir PR apilada de `feat/clinical-workflow-foundation` contra `feat/persistent-clients-agenda`, documentando dependencia de PR #1/#40 y continuar despues con Auth completa, plantillas de anamnesis y motor nutricional.
+- Abrir PR apilada de `feat/anthropometry-measurement-workflow` contra `feat/clinical-workflow-foundation`, documentando dependencia de PR #1/#40/#41 y continuar despues con resultados/PDF antropometricos, equivalencias y raciones de macronutrientes.
