@@ -2,7 +2,19 @@ import "server-only";
 
 import type { PoolClient } from "pg";
 
-import type { AnthropometryInput, ConsultationInput, IntakeInput } from "./schemas";
+import {
+  ANTHROPOMETRY_DEFINITION_BY_SLUG,
+  ANTHROPOMETRY_MEASUREMENT_DEFINITIONS,
+  evaluateMeasurement
+} from "@/features/anthropometry/measurement-engine";
+import type { MeasurementStatus } from "@/features/anthropometry/measurement-engine";
+
+import type {
+  AnthropometryInput,
+  AnthropometryWorkflowInput,
+  ConsultationInput,
+  IntakeInput
+} from "./schemas";
 import type { RepositoryResult } from "@/features/clients-agenda/repository";
 import { withProfessionalTransaction } from "@/server/professional-context";
 import type { ProfessionalContext } from "@/server/professional-context";
@@ -63,10 +75,16 @@ export type ConsultationRecord = {
 export type AnthropometrySession = {
   id: string;
   status: string;
+  workflowStatus: string;
   measuredAt: string;
   protocol: string;
+  protocolId: string | null;
+  profileSlug: string | null;
+  protocolVersion: string | null;
   conditions: string | null;
   instrument: string | null;
+  anthropometristName: string | null;
+  center: string | null;
   massKg: number | null;
   heightCm: number | null;
   waistCm: number | null;
@@ -78,6 +96,61 @@ export type AnthropometrySession = {
   bmi: number | null;
   waistToHeightRatio: number | null;
   skinfoldSumMm: number | null;
+  observations: string | null;
+};
+
+export type AnthropometryProtocol = {
+  id: string;
+  slug: string;
+  name: string;
+  version: string;
+  profileKind: string;
+  isakCompatibilityNote: string;
+  requiresAccreditationNotice: boolean;
+  evidenceStatus: string;
+};
+
+export type AnthropometryMeasurementDefinition = {
+  id: string;
+  slug: string;
+  name: string;
+  abbreviation: string;
+  category: string;
+  unit: string;
+  precisionDigits: number;
+  plausibleMin: number;
+  plausibleMax: number;
+  toleranceRelativePercent: number;
+  helpTitle: string;
+  helpSummary: string;
+  helpPosition: string;
+  helpLandmark: string;
+  helpTechnique: string;
+  helpCommonErrors: string[];
+  helpInstrument: string;
+  helpSource: string;
+  helpProtocolVersion: string;
+  evidenceStatus: string;
+  sortOrder: number;
+};
+
+export type AnthropometrySessionMeasurement = {
+  id: string;
+  sessionId: string;
+  slug: string;
+  name: string;
+  abbreviation: string;
+  category: string;
+  unit: string;
+  firstValue: number | null;
+  secondValue: number | null;
+  thirdValue: number | null;
+  absoluteDiff: number | null;
+  relativeDiffPercent: number | null;
+  toleranceRelativePercent: number;
+  finalValue: number | null;
+  status: MeasurementStatus;
+  plausibleWarning: string | null;
   observations: string | null;
 };
 
@@ -99,6 +172,9 @@ export type ClinicalWorkspace = {
   intake: IntakeResponse | null;
   consultations: ConsultationRecord[];
   anthropometry: AnthropometrySession[];
+  anthropometryProtocols: AnthropometryProtocol[];
+  anthropometryDefinitions: AnthropometryMeasurementDefinition[];
+  anthropometryMeasurements: AnthropometrySessionMeasurement[];
   timeline: ClientTimelineItem[];
 };
 
@@ -151,10 +227,16 @@ type ConsultationRow = {
 type AnthropometryRow = {
   id: string;
   status: string;
+  workflow_status: string;
   measured_at: Date | string;
   protocol: string;
+  protocol_id: string | null;
+  profile_slug: string | null;
+  protocol_version: string | null;
   conditions: string | null;
   instrument: string | null;
+  anthropometrist_name: string | null;
+  center: string | null;
   mass_kg: string | number | null;
   height_cm: string | number | null;
   waist_cm: string | number | null;
@@ -166,6 +248,61 @@ type AnthropometryRow = {
   bmi: string | number | null;
   waist_to_height_ratio: string | number | null;
   skinfold_sum_mm: string | number | null;
+  observations: string | null;
+};
+
+type AnthropometryProtocolRow = {
+  id: string;
+  slug: string;
+  name: string;
+  version: string;
+  profile_kind: string;
+  isak_compatibility_note: string;
+  requires_accreditation_notice: boolean;
+  evidence_status: string;
+};
+
+type AnthropometryDefinitionRow = {
+  id: string;
+  slug: string;
+  name: string;
+  abbreviation: string;
+  category: string;
+  unit: string;
+  precision_digits: number;
+  plausible_min: string | number;
+  plausible_max: string | number;
+  tolerance_relative_percent: string | number;
+  help_title: string;
+  help_summary: string;
+  help_position: string;
+  help_landmark: string;
+  help_technique: string;
+  help_common_errors: string[];
+  help_instrument: string;
+  help_source: string;
+  help_protocol_version: string;
+  evidence_status: string;
+  sort_order: number;
+};
+
+type AnthropometryMeasurementRow = {
+  id: string;
+  session_id: string;
+  slug: string;
+  name: string;
+  abbreviation: string;
+  category: string;
+  unit: string;
+  first_value: string | number | null;
+  second_value: string | number | null;
+  third_value: string | number | null;
+  absolute_diff: string | number | null;
+  relative_diff_percent: string | number | null;
+  tolerance_relative_percent: string | number;
+  final_value: string | number | null;
+  status: MeasurementStatus;
+  plausible_warning: string | null;
   observations: string | null;
 };
 
@@ -234,6 +371,84 @@ export async function loadClinicalWorkspace(
         limit 20`,
         [context.organizationId, clientId]
       );
+      const protocols = await client.query<AnthropometryProtocolRow>(
+        `select
+          id,
+          slug,
+          name,
+          version,
+          profile_kind,
+          isak_compatibility_note,
+          requires_accreditation_notice,
+          evidence_status
+        from public.anthropometry_protocols
+        where organization_id is null or organization_id = $1
+        order by organization_id nulls first, name`,
+        [context.organizationId]
+      );
+      const defaultProtocol =
+        protocols.rows.find((row) => row.slug === "compatible_isak_restricted_v0") ??
+        protocols.rows[0];
+      const selectedProtocolId = anthropometry.rows[0]?.protocol_id ?? defaultProtocol?.id ?? null;
+      const definitions = await client.query<AnthropometryDefinitionRow>(
+        `select
+          d.id,
+          d.slug,
+          d.name,
+          d.abbreviation,
+          d.category,
+          d.unit,
+          d.precision_digits,
+          d.plausible_min,
+          d.plausible_max,
+          pm.tolerance_relative_percent,
+          d.help_title,
+          d.help_summary,
+          d.help_position,
+          d.help_landmark,
+          d.help_technique,
+          d.help_common_errors,
+          d.help_instrument,
+          d.help_source,
+          d.help_protocol_version,
+          d.evidence_status,
+          pm.sort_order
+        from public.anthropometry_protocol_measurements pm
+        join public.anthropometry_measurement_definitions d on d.id = pm.measurement_definition_id
+        where pm.protocol_id = $1
+        order by pm.sort_order`,
+        [selectedProtocolId]
+      );
+      const anthropometrySessionIds = anthropometry.rows.map((row) => row.id);
+      const measurements =
+        anthropometrySessionIds.length > 0
+          ? await client.query<AnthropometryMeasurementRow>(
+              `select
+                sm.id,
+                sm.session_id,
+                d.slug,
+                d.name,
+                d.abbreviation,
+                sm.category,
+                sm.unit,
+                sm.first_value,
+                sm.second_value,
+                sm.third_value,
+                sm.absolute_diff,
+                sm.relative_diff_percent,
+                sm.tolerance_relative_percent,
+                sm.final_value,
+                sm.status,
+                sm.plausible_warning,
+                sm.observations
+              from public.anthropometry_session_measurements sm
+              join public.anthropometry_measurement_definitions d on d.id = sm.measurement_definition_id
+              where sm.organization_id = $1
+                and sm.session_id = any($2::uuid[])
+              order by sm.session_id, d.sort_order`,
+              [context.organizationId, anthropometrySessionIds]
+            )
+          : { rows: [] };
       const timeline = await client.query<TimelineRow>(
         `select id, kind, happened_at, title, detail
         from (
@@ -270,6 +485,9 @@ export async function loadClinicalWorkspace(
           intake: intake.rows[0] ? toIntake(intake.rows[0]) : null,
           consultations: consultations.rows.map(toConsultation),
           anthropometry: anthropometry.rows.map(toAnthropometry),
+          anthropometryProtocols: protocols.rows.map(toAnthropometryProtocol),
+          anthropometryDefinitions: definitions.rows.map(toAnthropometryDefinition),
+          anthropometryMeasurements: measurements.rows.map(toAnthropometryMeasurement),
           timeline: timeline.rows.map(toTimeline)
         }
       };
@@ -535,6 +753,104 @@ export async function saveAnthropometry(input: AnthropometryInput) {
   assertReadyOutcome(outcome);
 }
 
+export async function saveAnthropometryWorkflow(input: AnthropometryWorkflowInput) {
+  const outcome = await withProfessionalTransaction(async (client, context) => {
+    const protocol = await loadProtocolForWorkflow(client, context, input.protocolSlug);
+    const definitions = await loadDefinitionsForProtocol(client, protocol.id);
+    const evaluated = definitions.map((definition) => {
+      const measurement = input.measurements[definition.slug];
+      const engineDefinition =
+        ANTHROPOMETRY_DEFINITION_BY_SLUG.get(definition.slug) ??
+        ANTHROPOMETRY_MEASUREMENT_DEFINITIONS[0];
+      const evaluation = evaluateMeasurement({
+        definition: {
+          ...engineDefinition,
+          plausibleMin: definition.plausibleMin,
+          plausibleMax: definition.plausibleMax,
+          precisionDigits: definition.precisionDigits,
+          toleranceRelativePercent: definition.toleranceRelativePercent
+        },
+        firstValue: measurement?.firstValue,
+        secondValue: measurement?.secondValue,
+        thirdValue: measurement?.thirdValue
+      });
+
+      return {
+        definition,
+        evaluation,
+        observations: typeof measurement?.observations === "string" ? measurement.observations : ""
+      };
+    });
+
+    if (
+      input.mode === "finalize" &&
+      evaluated.some(({ evaluation }) => evaluation.status === "third_required")
+    ) {
+      throw new Error("third measurement required");
+    }
+
+    if (
+      input.mode === "finalize" &&
+      evaluated.some(({ evaluation }) => evaluation.status === "implausible")
+    ) {
+      throw new Error("implausible anthropometry value");
+    }
+
+    const summary = buildAnthropometrySummary(evaluated);
+    const visibility = {
+      clientCanViewWeight: input.clientCanViewWeight,
+      clientCanViewBmi: input.clientCanViewBmi,
+      clientCanViewWaist: input.clientCanViewWaist
+    };
+    const sessionId = input.sessionId
+      ? await updateAnthropometryWorkflowSession(
+          client,
+          context,
+          input,
+          protocol,
+          summary,
+          visibility,
+          "measuring",
+          "draft",
+          "",
+          ""
+        )
+      : await insertAnthropometryWorkflowSession(
+          client,
+          context,
+          input,
+          protocol,
+          summary,
+          visibility,
+          "measuring",
+          "draft",
+          "",
+          ""
+        );
+
+    for (const item of evaluated) {
+      await upsertAnthropometryMeasurement(client, context, sessionId, item);
+    }
+
+    if (input.mode === "finalize") {
+      await completeAnthropometryWorkflowSession(client, context, sessionId, input.clientId);
+    }
+
+    await recordClinicalAudit(client, context, "anthropometry_sessions", sessionId, {
+      action:
+        input.mode === "finalize"
+          ? "finalized"
+          : input.sessionId
+            ? "draft_updated"
+            : "draft_created",
+      protocolSlug: protocol.slug,
+      measurementCount: evaluated.length
+    });
+  });
+
+  assertReadyOutcome(outcome);
+}
+
 function consultationParams(
   input: ConsultationInput,
   context: ReadyProfessionalContext,
@@ -569,6 +885,441 @@ function consultationParams(
     context.organizationId,
     input.clientId
   ];
+}
+
+type WorkflowProtocol = {
+  id: string;
+  slug: string;
+  name: string;
+  version: string;
+};
+
+type WorkflowDefinition = {
+  id: string;
+  slug: string;
+  category: string;
+  unit: "kg" | "cm" | "mm";
+  precisionDigits: number;
+  plausibleMin: number;
+  plausibleMax: number;
+  toleranceRelativePercent: number;
+  toleranceAbsolute: number | null;
+};
+
+type EvaluatedMeasurement = {
+  definition: WorkflowDefinition;
+  evaluation: ReturnType<typeof evaluateMeasurement>;
+  observations: string;
+};
+
+type AnthropometrySummary = {
+  massKg: number | null;
+  heightCm: number | null;
+  waistCm: number | null;
+  hipCm: number | null;
+  tricepsMm: number | null;
+  subscapularMm: number | null;
+  abdominalMm: number | null;
+  thighMm: number | null;
+};
+
+async function loadProtocolForWorkflow(
+  client: PoolClient,
+  context: ReadyProfessionalContext,
+  protocolSlug: string
+): Promise<WorkflowProtocol> {
+  const result = await client.query<WorkflowProtocol>(
+    `select id, slug, name, version
+    from public.anthropometry_protocols
+    where slug = $1
+      and active = true
+      and (organization_id is null or organization_id = $2)
+    order by organization_id nulls first
+    limit 1`,
+    [protocolSlug, context.organizationId]
+  );
+  const protocol = result.rows[0];
+
+  if (!protocol) {
+    throw new Error("Anthropometry protocol not found.");
+  }
+
+  return protocol;
+}
+
+async function loadDefinitionsForProtocol(
+  client: PoolClient,
+  protocolId: string
+): Promise<WorkflowDefinition[]> {
+  const result = await client.query<{
+    id: string;
+    slug: string;
+    category: string;
+    unit: "kg" | "cm" | "mm";
+    precision_digits: number;
+    plausible_min: string | number;
+    plausible_max: string | number;
+    tolerance_relative_percent: string | number;
+    tolerance_absolute: string | number | null;
+  }>(
+    `select
+      d.id,
+      d.slug,
+      d.category,
+      d.unit,
+      d.precision_digits,
+      d.plausible_min,
+      d.plausible_max,
+      pm.tolerance_relative_percent,
+      pm.tolerance_absolute
+    from public.anthropometry_protocol_measurements pm
+    join public.anthropometry_measurement_definitions d on d.id = pm.measurement_definition_id
+    where pm.protocol_id = $1
+    order by pm.sort_order`,
+    [protocolId]
+  );
+
+  return result.rows.map((row) => ({
+    id: row.id,
+    slug: row.slug,
+    category: row.category,
+    unit: row.unit,
+    precisionDigits: row.precision_digits,
+    plausibleMin: Number(row.plausible_min),
+    plausibleMax: Number(row.plausible_max),
+    toleranceRelativePercent: Number(row.tolerance_relative_percent),
+    toleranceAbsolute: toNumber(row.tolerance_absolute)
+  }));
+}
+
+async function insertAnthropometryWorkflowSession(
+  client: PoolClient,
+  context: ReadyProfessionalContext,
+  input: AnthropometryWorkflowInput,
+  protocol: WorkflowProtocol,
+  summary: AnthropometrySummary,
+  visibility: Record<string, boolean>,
+  workflowStatus: string,
+  status: string,
+  finalizedAt: string,
+  finalizedBy: string
+) {
+  const result = await client.query<{ id: string }>(
+    `insert into public.anthropometry_sessions (
+      organization_id,
+      client_id,
+      professional_profile_id,
+      consultation_id,
+      status,
+      workflow_status,
+      measured_at,
+      protocol,
+      protocol_id,
+      profile_slug,
+      protocol_version,
+      anthropometrist_name,
+      accreditation_level,
+      accreditation_number,
+      center,
+      conditions,
+      fasting_state,
+      previous_exercise,
+      declared_hydration,
+      laterality,
+      instrument,
+      instrument_brand,
+      instrument_model,
+      instrument_serial_number,
+      instrument_precision,
+      instrument_calibrated_at,
+      calibration_notes,
+      mass_kg,
+      height_cm,
+      waist_cm,
+      hip_cm,
+      triceps_mm,
+      subscapular_mm,
+      abdominal_mm,
+      thigh_mm,
+      visibility,
+      observations,
+      consent_confirmed,
+      finalized_at,
+      finalized_by,
+      created_by
+    )
+    values (
+      $1, $2, $3, nullif($4, '')::uuid, $5, $6,
+      coalesce(nullif($7, '')::timestamptz, now()), $8, $9, $10, $11,
+      nullif($12, ''), nullif($13, ''), nullif($14, ''), nullif($15, ''),
+      nullif($16, ''), nullif($17, ''), nullif($18, ''), nullif($19, ''), $20,
+      nullif($21, ''), nullif($22, ''), nullif($23, ''), nullif($24, ''),
+      nullif($25, ''), nullif($26, '')::date, nullif($27, ''),
+      $28, $29, $30, $31, $32, $33, $34, $35,
+      $36::jsonb, nullif($37, ''), $38,
+      nullif($39, '')::timestamptz, nullif($40, '')::uuid, $41
+    )
+    returning id`,
+    [
+      context.organizationId,
+      input.clientId,
+      context.professionalProfileId,
+      input.consultationId ?? "",
+      status,
+      workflowStatus,
+      input.measuredAt ?? "",
+      protocol.name,
+      protocol.id,
+      input.protocolSlug,
+      protocol.version,
+      input.anthropometristName ?? "",
+      input.accreditationLevel ?? "",
+      input.accreditationNumber ?? "",
+      input.center ?? "",
+      input.conditions ?? "",
+      input.fastingState ?? "",
+      input.previousExercise ?? "",
+      input.declaredHydration ?? "",
+      input.laterality,
+      input.instrument ?? "",
+      input.instrumentBrand ?? "",
+      input.instrumentModel ?? "",
+      input.instrumentSerialNumber ?? "",
+      input.instrumentPrecision ?? "",
+      input.instrumentCalibratedAt ?? "",
+      input.calibrationNotes ?? "",
+      summary.massKg,
+      summary.heightCm,
+      summary.waistCm,
+      summary.hipCm,
+      summary.tricepsMm,
+      summary.subscapularMm,
+      summary.abdominalMm,
+      summary.thighMm,
+      JSON.stringify(visibility),
+      input.observations ?? "",
+      input.consentConfirmed,
+      finalizedAt,
+      finalizedBy,
+      context.profileId
+    ]
+  );
+
+  return result.rows[0]?.id ?? "";
+}
+
+async function updateAnthropometryWorkflowSession(
+  client: PoolClient,
+  context: ReadyProfessionalContext,
+  input: AnthropometryWorkflowInput,
+  protocol: WorkflowProtocol,
+  summary: AnthropometrySummary,
+  visibility: Record<string, boolean>,
+  workflowStatus: string,
+  status: string,
+  finalizedAt: string,
+  finalizedBy: string
+) {
+  const result = await client.query<{ id: string }>(
+    `update public.anthropometry_sessions
+    set
+      status = $1,
+      workflow_status = $2,
+      measured_at = coalesce(nullif($3, '')::timestamptz, measured_at),
+      protocol = $4,
+      protocol_id = $5,
+      profile_slug = $6,
+      protocol_version = $7,
+      anthropometrist_name = nullif($8, ''),
+      accreditation_level = nullif($9, ''),
+      accreditation_number = nullif($10, ''),
+      center = nullif($11, ''),
+      conditions = nullif($12, ''),
+      fasting_state = nullif($13, ''),
+      previous_exercise = nullif($14, ''),
+      declared_hydration = nullif($15, ''),
+      laterality = $16,
+      instrument = nullif($17, ''),
+      instrument_brand = nullif($18, ''),
+      instrument_model = nullif($19, ''),
+      instrument_serial_number = nullif($20, ''),
+      instrument_precision = nullif($21, ''),
+      instrument_calibrated_at = nullif($22, '')::date,
+      calibration_notes = nullif($23, ''),
+      mass_kg = $24,
+      height_cm = $25,
+      waist_cm = $26,
+      hip_cm = $27,
+      triceps_mm = $28,
+      subscapular_mm = $29,
+      abdominal_mm = $30,
+      thigh_mm = $31,
+      visibility = $32::jsonb,
+      observations = nullif($33, ''),
+      consent_confirmed = $34,
+      finalized_at = nullif($35, '')::timestamptz,
+      finalized_by = nullif($36, '')::uuid,
+      updated_at = now()
+    where id = $37
+      and organization_id = $38
+      and client_id = $39
+      and workflow_status not in ('completed', 'validated', 'cancelled', 'superseded')
+    returning id`,
+    [
+      status,
+      workflowStatus,
+      input.measuredAt ?? "",
+      protocol.name,
+      protocol.id,
+      input.protocolSlug,
+      protocol.version,
+      input.anthropometristName ?? "",
+      input.accreditationLevel ?? "",
+      input.accreditationNumber ?? "",
+      input.center ?? "",
+      input.conditions ?? "",
+      input.fastingState ?? "",
+      input.previousExercise ?? "",
+      input.declaredHydration ?? "",
+      input.laterality,
+      input.instrument ?? "",
+      input.instrumentBrand ?? "",
+      input.instrumentModel ?? "",
+      input.instrumentSerialNumber ?? "",
+      input.instrumentPrecision ?? "",
+      input.instrumentCalibratedAt ?? "",
+      input.calibrationNotes ?? "",
+      summary.massKg,
+      summary.heightCm,
+      summary.waistCm,
+      summary.hipCm,
+      summary.tricepsMm,
+      summary.subscapularMm,
+      summary.abdominalMm,
+      summary.thighMm,
+      JSON.stringify(visibility),
+      input.observations ?? "",
+      input.consentConfirmed,
+      finalizedAt,
+      finalizedBy,
+      input.sessionId,
+      context.organizationId,
+      input.clientId
+    ]
+  );
+
+  if (result.rowCount === 0) {
+    throw new Error("locked anthropometry session");
+  }
+
+  return result.rows[0]?.id ?? input.sessionId;
+}
+
+async function upsertAnthropometryMeasurement(
+  client: PoolClient,
+  context: ReadyProfessionalContext,
+  sessionId: string,
+  item: EvaluatedMeasurement
+) {
+  await client.query(
+    `insert into public.anthropometry_session_measurements (
+      organization_id,
+      session_id,
+      measurement_definition_id,
+      category,
+      unit,
+      first_value,
+      second_value,
+      third_value,
+      absolute_diff,
+      relative_diff_percent,
+      tolerance_relative_percent,
+      tolerance_absolute,
+      final_value,
+      status,
+      plausible_warning,
+      observations,
+      updated_by
+    )
+    values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, nullif($16, ''), $17)
+    on conflict (session_id, measurement_definition_id) do update
+    set
+      first_value = excluded.first_value,
+      second_value = excluded.second_value,
+      third_value = excluded.third_value,
+      absolute_diff = excluded.absolute_diff,
+      relative_diff_percent = excluded.relative_diff_percent,
+      tolerance_relative_percent = excluded.tolerance_relative_percent,
+      tolerance_absolute = excluded.tolerance_absolute,
+      final_value = excluded.final_value,
+      status = excluded.status,
+      plausible_warning = excluded.plausible_warning,
+      observations = excluded.observations,
+      updated_by = excluded.updated_by,
+      updated_at = now()`,
+    [
+      context.organizationId,
+      sessionId,
+      item.definition.id,
+      item.definition.category,
+      item.definition.unit,
+      item.evaluation.firstValue,
+      item.evaluation.secondValue,
+      item.evaluation.thirdValue,
+      item.evaluation.absoluteDiff,
+      item.evaluation.relativeDiffPercent,
+      item.definition.toleranceRelativePercent,
+      item.definition.toleranceAbsolute,
+      item.evaluation.finalValue,
+      item.evaluation.status,
+      item.evaluation.plausibleWarning,
+      item.observations,
+      context.profileId
+    ]
+  );
+}
+
+async function completeAnthropometryWorkflowSession(
+  client: PoolClient,
+  context: ReadyProfessionalContext,
+  sessionId: string,
+  clientId: string
+) {
+  const result = await client.query(
+    `update public.anthropometry_sessions
+    set
+      status = 'finalized',
+      workflow_status = 'completed',
+      finalized_at = now(),
+      finalized_by = $1,
+      updated_at = now()
+    where id = $2
+      and organization_id = $3
+      and client_id = $4
+      and workflow_status not in ('completed', 'validated', 'cancelled', 'superseded')`,
+    [context.profileId, sessionId, context.organizationId, clientId]
+  );
+
+  if (result.rowCount === 0) {
+    throw new Error("locked anthropometry session");
+  }
+}
+
+function buildAnthropometrySummary(items: EvaluatedMeasurement[]): AnthropometrySummary {
+  return {
+    massKg: finalValue(items, "mass_body"),
+    heightCm: finalValue(items, "height_standing"),
+    waistCm: finalValue(items, "waist_girth"),
+    hipCm: finalValue(items, "hip_girth"),
+    tricepsMm: finalValue(items, "triceps_skinfold"),
+    subscapularMm: finalValue(items, "subscapular_skinfold"),
+    abdominalMm: finalValue(items, "abdominal_skinfold"),
+    thighMm: finalValue(items, "anterior_thigh_skinfold")
+  };
+}
+
+function finalValue(items: EvaluatedMeasurement[], slug: string): number | null {
+  return items.find((item) => item.definition.slug === slug)?.evaluation.finalValue ?? null;
 }
 
 function buildIntakeResponses(input: IntakeInput): Record<string, IntakeValue> {
@@ -700,10 +1451,16 @@ function toAnthropometry(row: AnthropometryRow): AnthropometrySession {
   return {
     id: row.id,
     status: row.status,
+    workflowStatus: row.workflow_status,
     measuredAt: toIso(row.measured_at) ?? "",
     protocol: row.protocol,
+    protocolId: row.protocol_id,
+    profileSlug: row.profile_slug,
+    protocolVersion: row.protocol_version,
     conditions: row.conditions,
     instrument: row.instrument,
+    anthropometristName: row.anthropometrist_name,
+    center: row.center,
     massKg: toNumber(row.mass_kg),
     heightCm: toNumber(row.height_cm),
     waistCm: toNumber(row.waist_cm),
@@ -715,6 +1472,71 @@ function toAnthropometry(row: AnthropometryRow): AnthropometrySession {
     bmi: toNumber(row.bmi),
     waistToHeightRatio: toNumber(row.waist_to_height_ratio),
     skinfoldSumMm: toNumber(row.skinfold_sum_mm),
+    observations: row.observations
+  };
+}
+
+function toAnthropometryProtocol(row: AnthropometryProtocolRow): AnthropometryProtocol {
+  return {
+    id: row.id,
+    slug: row.slug,
+    name: row.name,
+    version: row.version,
+    profileKind: row.profile_kind,
+    isakCompatibilityNote: row.isak_compatibility_note,
+    requiresAccreditationNotice: row.requires_accreditation_notice,
+    evidenceStatus: row.evidence_status
+  };
+}
+
+function toAnthropometryDefinition(
+  row: AnthropometryDefinitionRow
+): AnthropometryMeasurementDefinition {
+  return {
+    id: row.id,
+    slug: row.slug,
+    name: row.name,
+    abbreviation: row.abbreviation,
+    category: row.category,
+    unit: row.unit,
+    precisionDigits: row.precision_digits,
+    plausibleMin: Number(row.plausible_min),
+    plausibleMax: Number(row.plausible_max),
+    toleranceRelativePercent: Number(row.tolerance_relative_percent),
+    helpTitle: row.help_title,
+    helpSummary: row.help_summary,
+    helpPosition: row.help_position,
+    helpLandmark: row.help_landmark,
+    helpTechnique: row.help_technique,
+    helpCommonErrors: row.help_common_errors,
+    helpInstrument: row.help_instrument,
+    helpSource: row.help_source,
+    helpProtocolVersion: row.help_protocol_version,
+    evidenceStatus: row.evidence_status,
+    sortOrder: row.sort_order
+  };
+}
+
+function toAnthropometryMeasurement(
+  row: AnthropometryMeasurementRow
+): AnthropometrySessionMeasurement {
+  return {
+    id: row.id,
+    sessionId: row.session_id,
+    slug: row.slug,
+    name: row.name,
+    abbreviation: row.abbreviation,
+    category: row.category,
+    unit: row.unit,
+    firstValue: toNumber(row.first_value),
+    secondValue: toNumber(row.second_value),
+    thirdValue: toNumber(row.third_value),
+    absoluteDiff: toNumber(row.absolute_diff),
+    relativeDiffPercent: toNumber(row.relative_diff_percent),
+    toleranceRelativePercent: Number(row.tolerance_relative_percent),
+    finalValue: toNumber(row.final_value),
+    status: row.status,
+    plausibleWarning: row.plausible_warning,
     observations: row.observations
   };
 }

@@ -91,6 +91,54 @@ export const anthropometrySchema = z.object({
   clientCanViewWaist: z.coerce.boolean().default(false)
 });
 
+const optionalMeasurementValue = z
+  .string()
+  .trim()
+  .max(20)
+  .optional()
+  .or(z.literal(""))
+  .or(z.number().positive());
+
+export const anthropometryWorkflowSchema = z.object({
+  clientId: z.string().uuid(),
+  sessionId: z.string().uuid().optional().or(z.literal("")),
+  consultationId: z.string().uuid().optional().or(z.literal("")),
+  measuredAt: z.string().datetime({ offset: true }).optional().or(z.literal("")),
+  protocolSlug: z.string().trim().min(2).max(120).default("compatible_isak_restricted_v0"),
+  anthropometristName: optionalText(160),
+  accreditationLevel: optionalText(120),
+  accreditationNumber: optionalText(120),
+  center: optionalText(160),
+  conditions: optionalText(1000),
+  fastingState: optionalText(300),
+  previousExercise: optionalText(300),
+  declaredHydration: optionalText(300),
+  laterality: z.enum(["right", "left", "mixed"]).default("right"),
+  instrument: optionalText(1000),
+  instrumentBrand: optionalText(160),
+  instrumentModel: optionalText(160),
+  instrumentSerialNumber: optionalText(160),
+  instrumentPrecision: optionalText(120),
+  instrumentCalibratedAt: z.string().date().optional().or(z.literal("")),
+  calibrationNotes: optionalText(1000),
+  consentConfirmed: z.coerce.boolean().default(false),
+  observations: optionalText(2000),
+  clientCanViewWeight: z.coerce.boolean().default(false),
+  clientCanViewBmi: z.coerce.boolean().default(false),
+  clientCanViewWaist: z.coerce.boolean().default(false),
+  mode: z.enum(["draft", "finalize"]).default("draft"),
+  measurements: z.record(
+    z.string(),
+    z.object({
+      firstValue: optionalMeasurementValue,
+      secondValue: optionalMeasurementValue,
+      thirdValue: optionalMeasurementValue,
+      observations: optionalText(500)
+    })
+  )
+});
+
 export type IntakeInput = z.infer<typeof intakeSchema>;
 export type ConsultationInput = z.infer<typeof consultationSchema>;
 export type AnthropometryInput = z.infer<typeof anthropometrySchema>;
+export type AnthropometryWorkflowInput = z.infer<typeof anthropometryWorkflowSchema>;

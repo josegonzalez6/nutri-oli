@@ -17,14 +17,11 @@ import type { ReactNode } from "react";
 
 import { AppShell } from "@/components/app-shell";
 import { StatePanel } from "@/components/state-panel";
+import { AnthropometryMeasurementWorkflow } from "@/features/anthropometry/measurement-workflow";
 import { ActionForm } from "@/features/clients-agenda/action-form";
 import { clientStatusLabel } from "@/features/clients-agenda/labels";
 import { formatDateTime } from "@/features/clients-agenda/time";
-import {
-  saveAnthropometryAction,
-  saveConsultationAction,
-  saveIntakeAction
-} from "@/features/clinical/actions";
+import { saveConsultationAction, saveIntakeAction } from "@/features/clinical/actions";
 import type { ClinicalWorkspace, IntakeValue } from "@/features/clinical/repository";
 import { loadClinicalWorkspace } from "@/features/clinical/repository";
 import type { Locale } from "@/i18n/routing";
@@ -144,6 +141,21 @@ function ClinicalWorkspaceView({
 }) {
   const latestConsultation = workspace.consultations[0] ?? null;
   const latestAnthropometry = workspace.anthropometry[0] ?? null;
+  const editableAnthropometry =
+    workspace.anthropometry.find((session) => !isLockedAnthropometry(session.workflowStatus)) ??
+    null;
+  const previousAnthropometry =
+    workspace.anthropometry.find((session) => session.id !== editableAnthropometry?.id) ?? null;
+  const editableAnthropometryMeasurements = editableAnthropometry
+    ? workspace.anthropometryMeasurements.filter(
+        (measurement) => measurement.sessionId === editableAnthropometry.id
+      )
+    : [];
+  const previousAnthropometryMeasurements = previousAnthropometry
+    ? workspace.anthropometryMeasurements.filter(
+        (measurement) => measurement.sessionId === previousAnthropometry.id
+      )
+    : [];
   const draftConsultation =
     workspace.consultations.find((consultation) => consultation.status === "draft") ?? null;
 
@@ -423,77 +435,54 @@ function ClinicalWorkspaceView({
           <Ruler aria-hidden="true" className="size-5 text-[var(--olive-dark)]" />
           <h2 className="text-xl font-semibold">Antropometria</h2>
         </div>
-        <div className="mt-4 grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
-          <ActionForm action={saveAnthropometryAction} submitLabel="Guardar sesion">
-            <input name="clientId" type="hidden" value={workspace.client.id} />
-            <input name="consultationId" type="hidden" value={draftConsultation?.id ?? ""} />
-            <div className="grid gap-4 sm:grid-cols-2">
-              <TextInput
-                label="Fecha y hora"
-                name="measuredAt"
-                placeholder="2026-07-26T10:00:00+02:00"
-              />
-              <TextInput defaultValue="custom" label="Protocolo" name="protocol" />
-              <TextInput label="Masa corporal kg" name="massKg" type="number" />
-              <TextInput label="Talla cm" name="heightCm" type="number" />
-              <TextInput label="Cintura cm" name="waistCm" type="number" />
-              <TextInput label="Cadera cm" name="hipCm" type="number" />
-              <TextInput label="Talla sentada cm" name="sittingHeightCm" type="number" />
-              <TextInput label="Envergadura cm" name="wingspanCm" type="number" />
-              <TextInput label="Triceps mm" name="tricepsMm" type="number" />
-              <TextInput label="Subescapular mm" name="subscapularMm" type="number" />
-              <TextInput label="Abdominal mm" name="abdominalMm" type="number" />
-              <TextInput label="Muslo anterior mm" name="thighMm" type="number" />
-            </div>
-            <TextAreaField label="Condiciones" name="conditions" />
-            <TextAreaField label="Instrumental" name="instrument" />
-            <TextAreaField label="Calibracion" name="calibrationNotes" />
-            <TextAreaField label="Observaciones" name="observations" />
-            <fieldset className="rounded-md border border-[var(--border)] p-3">
-              <legend className="px-1 text-sm font-semibold">Visibilidad cliente</legend>
-              <label className="mt-2 flex items-center gap-2 text-sm">
-                <input name="clientCanViewWeight" type="checkbox" /> Mostrar peso
-              </label>
-              <label className="mt-2 flex items-center gap-2 text-sm">
-                <input name="clientCanViewBmi" type="checkbox" /> Mostrar IMC
-              </label>
-              <label className="mt-2 flex items-center gap-2 text-sm">
-                <input name="clientCanViewWaist" type="checkbox" /> Mostrar cintura
-              </label>
-            </fieldset>
-          </ActionForm>
-          <div>
-            <h3 className="font-semibold">Sesiones registradas</h3>
-            <div className="mt-3 space-y-3">
-              {workspace.anthropometry.length === 0 ? (
-                <p className="text-sm text-[var(--muted)]">No hay sesiones antropometricas.</p>
-              ) : (
-                workspace.anthropometry.map((session) => (
-                  <article
-                    className="rounded-md border border-[var(--border)] bg-[var(--background)] p-4"
-                    key={session.id}
-                  >
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <p className="font-medium">{formatDateTime(session.measuredAt)}</p>
-                      <span className="rounded-md bg-[var(--surface-strong)] px-2 py-1 text-xs">
-                        {session.protocol}
-                      </span>
-                    </div>
-                    <div className="mt-3 grid gap-2 text-sm sm:grid-cols-3">
-                      <Metric label="Masa" value={formatNumber(session.massKg, "kg")} />
-                      <Metric label="IMC" value={formatNumber(session.bmi, "")} />
-                      <Metric
-                        label="Cintura/talla"
-                        value={formatNumber(session.waistToHeightRatio, "")}
-                      />
-                      <Metric label="Pliegues" value={formatNumber(session.skinfoldSumMm, "mm")} />
-                      <Metric label="Cintura" value={formatNumber(session.waistCm, "cm")} />
-                      <Metric label="Cadera" value={formatNumber(session.hipCm, "cm")} />
-                    </div>
-                  </article>
-                ))
-              )}
-            </div>
+        <p className="mt-2 text-sm text-[var(--muted)]">
+          Flujo clinico con primera, segunda y tercera medicion cuando la discrepancia supera la
+          tolerancia configurada.
+        </p>
+        <div className="mt-4">
+          <AnthropometryMeasurementWorkflow
+            clientId={workspace.client.id}
+            consultationId={draftConsultation?.id ?? ""}
+            definitions={workspace.anthropometryDefinitions}
+            editableMeasurements={editableAnthropometryMeasurements}
+            editableSession={editableAnthropometry}
+            previousMeasurements={previousAnthropometryMeasurements}
+            previousSession={previousAnthropometry}
+            protocols={workspace.anthropometryProtocols}
+          />
+        </div>
+        <div className="mt-6">
+          <h3 className="font-semibold">Sesiones registradas</h3>
+          <div className="mt-3 grid gap-3 lg:grid-cols-2">
+            {workspace.anthropometry.length === 0 ? (
+              <p className="text-sm text-[var(--muted)]">No hay sesiones antropometricas.</p>
+            ) : (
+              workspace.anthropometry.map((session) => (
+                <article
+                  className="rounded-md border border-[var(--border)] bg-[var(--background)] p-4"
+                  key={session.id}
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="font-medium">{formatDateTime(session.measuredAt)}</p>
+                    <span className="rounded-md bg-[var(--surface-strong)] px-2 py-1 text-xs">
+                      {session.workflowStatus}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-xs text-[var(--muted)]">{session.protocol}</p>
+                  <div className="mt-3 grid gap-2 text-sm sm:grid-cols-3">
+                    <Metric label="Masa" value={formatNumber(session.massKg, "kg")} />
+                    <Metric label="IMC" value={formatNumber(session.bmi, "")} />
+                    <Metric
+                      label="Cintura/talla"
+                      value={formatNumber(session.waistToHeightRatio, "")}
+                    />
+                    <Metric label="Pliegues" value={formatNumber(session.skinfoldSumMm, "mm")} />
+                    <Metric label="Cintura" value={formatNumber(session.waistCm, "cm")} />
+                    <Metric label="Cadera" value={formatNumber(session.hipCm, "cm")} />
+                  </div>
+                </article>
+              ))
+            )}
           </div>
         </div>
       </section>
@@ -540,34 +529,6 @@ function TextAreaField({
     <label className="grid gap-2 text-sm font-medium">
       {label}
       <textarea className={inputClass} defaultValue={defaultValue} name={name} rows={3} />
-    </label>
-  );
-}
-
-function TextInput({
-  name,
-  label,
-  defaultValue = "",
-  placeholder,
-  type = "text"
-}: {
-  name: string;
-  label: string;
-  defaultValue?: string;
-  placeholder?: string;
-  type?: string;
-}) {
-  return (
-    <label className="grid gap-2 text-sm font-medium">
-      {label}
-      <input
-        className={inputClass}
-        defaultValue={defaultValue}
-        name={name}
-        placeholder={placeholder}
-        step={type === "number" ? "0.01" : undefined}
-        type={type}
-      />
     </label>
   );
 }
@@ -639,6 +600,12 @@ function ageFromDate(date: string | null) {
   return `${age} anos`;
 }
 
+function isLockedAnthropometry(status: string) {
+  return ["completed", "validated", "cancelled", "superseded"].includes(status);
+}
+
 function formatNumber(value: number | null, unit: string) {
-  return value === null ? "Sin dato" : `${value.toLocaleString("es-ES")}${unit ? ` ${unit}` : ""}`;
+  return value === null
+    ? "No calculable"
+    : `${value.toLocaleString("es-ES")}${unit ? ` ${unit}` : ""}`;
 }
