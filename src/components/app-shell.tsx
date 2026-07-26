@@ -31,12 +31,18 @@ export function AppShell({
   const navItems: NavItem[] = [
     { href: `/${locale}/${basePath}`, label: "Inicio", icon: <Home aria-hidden="true" /> },
     {
-      href: `/${locale}/${basePath}#agenda`,
+      href:
+        section === "professional"
+          ? `/${locale}/profesional/agenda`
+          : `/${locale}/${basePath}#agenda`,
       label: "Agenda",
       icon: <CalendarDays aria-hidden="true" />
     },
     {
-      href: `/${locale}/${basePath}#clientes`,
+      href:
+        section === "professional"
+          ? `/${locale}/profesional/clientes`
+          : `/${locale}/${basePath}#clientes`,
       label: "Clientes",
       icon: <Users aria-hidden="true" />
     },
@@ -67,7 +73,10 @@ export function AppShell({
 
   return (
     <div className="min-h-screen lg:grid lg:grid-cols-[17rem_1fr]">
-      <aside className="border-b border-[var(--border)] bg-[var(--surface)] p-4 lg:min-h-screen lg:border-b-0 lg:border-r">
+      <aside
+        aria-label="Navegacion lateral"
+        className="border-b border-[var(--border)] bg-[var(--surface)] p-4 lg:min-h-screen lg:border-b-0 lg:border-r"
+      >
         <Link
           className="flex items-center gap-3 text-lg font-semibold"
           href={`/${locale}/${basePath}`}
