@@ -35,16 +35,20 @@ Fase 2 - Dashboard operativo, clientes y agenda.
 - Documentos funcionales creados: `docs/COMPETITOR_BENCHMARK.md`, `docs/FEATURE_MATRIX.md`, `docs/PRODUCT_GAPS.md`, `docs/NUTRI_OLI_FUNCTIONAL_SCOPE.md`, `docs/USER_FLOWS.md`, `docs/CLINICAL_SAFETY_RULES.md` y `docs/LEGAL_REVIEW_REQUIRED.md`.
 - Backlog actualizado con prioridades `MUST`, `SHOULD`, `COULD` y `WON'T NOW` derivadas del benchmark.
 - Dashboard profesional convertido en centro operativo con agenda demo, cola de atencion, clientes en seguimiento y consulta guiada.
+- Revision independiente del PR #1 documentada en `docs/pr-1-review/REVIEW.md`.
+- Capturas responsive de dashboard generadas en `docs/pr-1-review/`.
+- Login corregido: ya no muestra boton submit ni formulario sin accion persistente.
+- Playwright e2e corregido para ejecutar contra `next start` tras build.
 
 ## Trabajo pendiente
 
 - Validacion clinica, ISAK y juridica por profesionales humanos antes de produccion.
 - Revision de licencia BEDCA antes de distribuir datos o usarlos en produccion.
-- CI remoto de la PR debe volver a pasar tras los commits de benchmark/dashboard.
+- CI remoto de la PR debe volver a pasar tras los commits de review final.
 
 ## Bloqueos
 
-- No se han recibido capturas en el repositorio local; se construye identidad original segun especificacion.
+- No hay bloqueos tecnicos para fusionar PR #1 cuando CI remoto vuelva a pasar y GitHub permita squash merge.
 
 ## Riesgos
 
@@ -53,12 +57,13 @@ Fase 2 - Dashboard operativo, clientes y agenda.
 - BEDCA esta disponible solo como import local; el XLSX y el JSON generado no se versionan.
 - Las funciones de competidores estan documentadas como evidencia publica anunciada/observada, no como verificacion tecnica interna.
 - IA, pagos, facturacion, vademecum farmaco-nutriente, apps nativas y colectividades quedan fuera del MVP.
+- Dashboard, portal y catalogo siguen siendo demo/local; no persisten mutaciones desde UI en PR #1.
 - `psql` no esta instalado fuera de Supabase CLI.
 - `supabase db lint` sobre todos los schemas incluye avisos de la extension pgTAP; lint limitado a `public,private` pasa sin errores.
 
 ## Ultimo commit
 
-- `HEAD` - `5646ce9 docs: document food catalog foundation`; cambios locales de benchmark/dashboard pendientes de commit.
+- `HEAD` - `9f89e00 feat: add operational professional dashboard`; cambios locales de review final pendientes de commit.
 
 ## Ultimos comandos de validacion ejecutados
 
@@ -71,10 +76,10 @@ Fase 2 - Dashboard operativo, clientes y agenda.
 - `corepack pnpm bedca:import /Users/josegonzalez/Documents/Proyectos/NUTRI/data/bedca.xlsx --database-url=<local Supabase DB_URL>`: PASS, 957 alimentos importados localmente.
 - `supabase test db`: PASS, 1 archivo y 16 tests.
 - `supabase db lint --schema public,private --fail-on error`: PASS.
-- `corepack pnpm test:e2e`: PASS, 6 tests con axe.
+- `corepack pnpm test:e2e`: PASS, 10 tests con axe.
 - `corepack pnpm audit --audit-level moderate`: PASS, sin vulnerabilidades conocidas.
 - Secret scan rapido con `rg`: sin secretos reales; solo referencia `env(OPENAI_API_KEY)` en config local Supabase Studio.
 
 ## Proxima accion automatica
 
-- Publicar commits pequenos de benchmark/dashboard en la PR existente y revisar CI remoto.
+- Publicar commit de review final en la PR existente, revisar CI remoto, fusionar por squash y empezar Clientes + Agenda persistente en una rama nueva.

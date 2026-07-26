@@ -26,13 +26,13 @@ Nutri-Oli tendrá:
 5. Despliegue reproducible mediante GitHub + Supabase + Vercel.
 6. Identidad propia. Las capturas adjuntas son únicamente referencia funcional y de composición visual. **No hagas una copia exacta de Nutrium, no reutilices su marca, textos, ilustraciones, iconos, CSS, recursos ni trade dress.**
 
-Nombre del producto: **Nutri-Oli**  
-Slug técnico preferido: `nutri-oli`  
-Idioma inicial de la interfaz: español.  
-Preparar internacionalización para catalán desde el inicio.  
-Zona horaria predeterminada: `Europe/Madrid`.  
-Sistema de unidades predeterminado: métrico/SI.  
-Formato de fecha predeterminado: `dd/MM/yyyy`.  
+Nombre del producto: **Nutri-Oli**
+Slug técnico preferido: `nutri-oli`
+Idioma inicial de la interfaz: español.
+Preparar internacionalización para catalán desde el inicio.
+Zona horaria predeterminada: `Europe/Madrid`.
+Sistema de unidades predeterminado: métrico/SI.
+Formato de fecha predeterminado: `dd/MM/yyyy`.
 Formato monetario: EUR, locale `es-ES`.
 
 ---

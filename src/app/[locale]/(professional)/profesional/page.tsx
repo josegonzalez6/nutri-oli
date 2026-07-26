@@ -79,8 +79,8 @@ export default async function ProfessionalDashboard({
           />
         </section>
 
-        <section id="agenda" className="mt-8 grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-          <div className="rounded-md border border-[var(--border)] bg-[var(--surface)] p-5">
+        <section id="agenda" className="mt-8 grid min-w-0 gap-6 xl:grid-cols-[1.15fr_0.85fr]">
+          <div className="min-w-0 rounded-md border border-[var(--border)] bg-[var(--surface)] p-5">
             <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <h2 className="text-xl font-semibold">{t("today")}</h2>
@@ -144,7 +144,7 @@ export default async function ProfessionalDashboard({
             </div>
           </div>
 
-          <aside className="rounded-md border border-[var(--border)] bg-[var(--surface)] p-5">
+          <aside className="min-w-0 rounded-md border border-[var(--border)] bg-[var(--surface)] p-5">
             <h2 className="text-xl font-semibold">Atencion requerida</h2>
             <ul className="mt-4 space-y-3">
               {snapshot.attention.map((item) => (
@@ -165,8 +165,8 @@ export default async function ProfessionalDashboard({
           </aside>
         </section>
 
-        <section id="clientes" className="mt-6 grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
-          <div className="rounded-md border border-[var(--border)] bg-[var(--surface)] p-5">
+        <section id="clientes" className="mt-6 grid min-w-0 gap-6 xl:grid-cols-[0.95fr_1.05fr]">
+          <div className="min-w-0 rounded-md border border-[var(--border)] bg-[var(--surface)] p-5">
             <div className="flex items-center gap-3">
               <UserRoundCheck aria-hidden="true" className="size-5 text-[var(--olive-dark)]" />
               <h2 className="text-xl font-semibold">Clientes en seguimiento</h2>
@@ -194,7 +194,7 @@ export default async function ProfessionalDashboard({
             </div>
           </div>
 
-          <div className="rounded-md border border-[var(--border)] bg-[var(--surface)] p-5">
+          <div className="min-w-0 rounded-md border border-[var(--border)] bg-[var(--surface)] p-5">
             <div className="flex items-center gap-3">
               <Stethoscope aria-hidden="true" className="size-5 text-[var(--olive-dark)]" />
               <h2 className="text-xl font-semibold">Consulta guiada</h2>
