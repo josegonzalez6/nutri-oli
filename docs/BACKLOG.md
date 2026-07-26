@@ -2,6 +2,10 @@
 
 ## Milestones e issues propuestos
 
+Priorizacion derivada de `docs/COMPETITOR_BENCHMARK.md` y `docs/FEATURE_MATRIX.md`.
+
+Leyenda: `MUST` bloquea MVP; `SHOULD` aporta valor alto; `COULD` se prepara sin retrasar nucleo; `WON'T NOW` queda fuera.
+
 ### Fase 1 - Fundacion segura
 
 - Issue 1: Inicializar Next.js, TypeScript, pnpm y Tailwind.
@@ -13,53 +17,69 @@
 
 ### Fase 2 - Clientes y agenda
 
-- Issue 7: Dashboard profesional conectado a Supabase.
-- Issue 8: CRUD de clientes con validacion Zod y auditoria.
-- Issue 9: Agenda diaria/semanal/mensual con prevencion de doble reserva.
-- Issue 10: Invitaciones de cliente sin contrasenas conocidas por profesional.
+- Issue 7 [MUST]: Dashboard profesional operativo con proxima cita, agenda del dia, mensajes, planes, consentimientos, tareas y accesos rapidos.
+- Issue 8 [MUST]: CRUD de clientes con validacion Zod, busqueda, filtros, etiquetas, estado, contacto minimo y auditoria.
+- Issue 9 [MUST]: Agenda diaria/semanal/mensual con servicios, modalidad, estados, notas administrativas y prevencion de doble reserva.
+- Issue 10 [MUST]: Invitaciones de cliente con token de un solo uso, caducidad y sin contrasenas conocidas por profesional.
+- Issue 10.1 [SHOULD]: Centro de consulta guiada inicial desde dashboard/cita/cliente.
+- Issue 10.2 [SHOULD]: Portal base con funciones habilitables por cliente.
 
 ### Fase 3 - Historia y consultas
 
-- Issue 11: Anamnesis versionada.
-- Issue 12: Consultas ADIME/PES y notas con addendum.
-- Issue 13: Objetivos SMART y recomendaciones.
+- Issue 11 [MUST]: Anamnesis versionada y configurable con borradores.
+- Issue 12 [MUST]: Consultas ADIME/PES opcionales, nota privada, resumen compartible y addenda.
+- Issue 13 [MUST]: Objetivos SMART, barreras, tareas y recomendaciones versionadas.
+- Issue 13.1 [SHOULD]: Separacion visible de privado, pendiente, compartido, publicado y retirado.
 
 ### Fase 4 - Antropometria
 
-- Issue 14: Protocolos y biblioteca configurable de medidas.
-- Issue 15: Repeticiones, discrepancias y calidad tecnica.
-- Issue 16: Calculos versionados y tests.
+- Issue 14 [MUST]: Protocolos y biblioteca configurable de medidas compatible con practica ISAK, sin afirmar certificacion.
+- Issue 15 [MUST]: Repeticiones, valores brutos, discrepancias, equipo, calibracion y calidad tecnica.
+- Issue 16 [MUST]: Calculos versionados, explicables y testeados.
+- Issue 16.1 [SHOULD]: Informe PDF antropometrico con secciones compartibles.
 
 ### Fase 5 - Alimentos y recetas
 
-- Issue 17: Base de alimentos con licencia y nutrientes.
-- Issue 18: Recetas versionadas.
-- Issue 19: Equivalencias e importacion CSV segura.
+- Issue 17 [MUST]: Base de alimentos con fuente, licencia, nutrientes, busqueda, filtros y alimentos propios.
+- Issue 18 [MUST]: Recetas versionadas con ingredientes, rendimiento, raciones, alergenos y calculo nutricional.
+- Issue 19 [MUST]: Equivalencias, porciones, medidas caseras, sustituciones e importacion CSV/XLSX segura.
+- Issue 19.1 [SHOULD]: Revision de licencia BEDCA antes de distribuir datos.
 
 ### Fase 6 - Planes dieteticos
 
-- Issue 20: Editor semanal.
-- Issue 21: Totales nutricionales y alternativas.
-- Issue 22: Versionado, publicacion y PDF.
+- Issue 20 [MUST]: Editor semanal y dia tipo con comidas, horarios, alimentos, recetas y medidas caseras.
+- Issue 21 [MUST]: Totales nutricionales, objetivos frente a plan, alternativas, sustituciones y lista de compra.
+- Issue 22 [MUST]: Versionado, borrador, publicacion, retirada, PDF y portal cliente.
+- Issue 22.1 [SHOULD]: Pauta abierta, metodo del plato, frecuencias y objetivos conductuales.
 
 ### Fase 7 - Seguimiento y mensajeria
 
-- Issue 23: Registros configurables del cliente.
-- Issue 24: Progreso visible segun criterio profesional.
-- Issue 25: Mensajeria segura y adjuntos privados.
-- Issue 26: Documentos y consentimientos.
+- Issue 23 [MUST]: Registros configurables del cliente con visibilidad granular y lenguaje no culpabilizador.
+- Issue 24 [SHOULD]: Progreso visible segun criterio profesional con graficas y tablas.
+- Issue 25 [SHOULD]: Mensajeria segura, adjuntos privados, aviso de no urgencias y notificaciones sin datos clinicos.
+- Issue 26 [MUST]: Documentos, consentimientos versionados, aceptacion, revocacion y exportacion.
 
 ### Fase 8 - Seguridad y cumplimiento
 
-- Issue 27: RLS exhaustiva e IDOR tests.
-- Issue 28: Exportacion, supresion, retencion y auditoria.
-- Issue 29: Hardening, secret scanning y red-team.
+- Issue 27 [MUST]: RLS exhaustiva, IDOR tests y pruebas multi-organizacion/multi-cliente.
+- Issue 28 [MUST]: Exportacion, supresion, bloqueo, retencion y auditoria inmutable para usuarios normales.
+- Issue 29 [MUST]: Hardening, secret scanning, red-team, storage privado, signed URLs y cache privada.
+- Issue 29.1 [COULD]: Preparar feature flags para IA, pagos, reservas publicas y calendarios externos, desactivados por defecto.
 
 ### Fase 9 - Pulido y produccion
 
-- Issue 30: Accesibilidad WCAG 2.2 AA.
-- Issue 31: Rendimiento y Lighthouse.
-- Issue 32: Despliegue, smoke test, backups y release.
+- Issue 30 [MUST]: Accesibilidad WCAG 2.2 AA con axe, teclado y contraste.
+- Issue 31 [SHOULD]: Rendimiento, Lighthouse, paginacion, bundle budget y queries lentas.
+- Issue 32 [MUST]: Despliegue, smoke test, backups, restauracion simulada y release.
+
+## Won't now
+
+- IA productiva con datos reales.
+- Vademecum farmaco-nutriente.
+- Pagos/facturacion.
+- Apps nativas.
+- Colectividades/APPCC.
+- Google/Apple Calendar y reservas publicas, salvo feature flags desactivados.
 
 ## Estado GitHub
 
