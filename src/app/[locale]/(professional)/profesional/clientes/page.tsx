@@ -1,4 +1,5 @@
 import { UserPlus, Users } from "lucide-react";
+import Link from "next/link";
 import { setRequestLocale } from "next-intl/server";
 
 import { AppShell } from "@/components/app-shell";
@@ -140,7 +141,14 @@ export default async function ClientsPage({ params }: { params: Promise<{ locale
                     >
                       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                         <div className="min-w-0">
-                          <h3 className="font-semibold">{client.displayName}</h3>
+                          <h3 className="font-semibold">
+                            <Link
+                              className="underline-offset-4 hover:underline"
+                              href={`/${locale}/profesional/clientes/${client.id}`}
+                            >
+                              {client.displayName}
+                            </Link>
+                          </h3>
                           <p className="mt-1 text-sm text-[var(--muted)]">
                             {client.internalCode} · {client.email ?? "Sin email"}
                           </p>
@@ -157,6 +165,12 @@ export default async function ClientsPage({ params }: { params: Promise<{ locale
                           <span className="w-fit rounded-md bg-[var(--surface-strong)] px-2 py-1 text-xs text-[var(--muted)]">
                             {clientStatusLabel(client.status)}
                           </span>
+                          <Link
+                            className="inline-flex min-h-10 items-center justify-center rounded-md border border-[var(--border)] bg-white px-3 text-sm font-semibold"
+                            href={`/${locale}/profesional/clientes/${client.id}#consulta`}
+                          >
+                            Iniciar consulta
+                          </Link>
                           <ActionForm action={updateClientStatusAction} submitLabel="Actualizar">
                             <input name="clientId" type="hidden" value={client.id} />
                             <label className="grid gap-2 text-sm font-medium">

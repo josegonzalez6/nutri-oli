@@ -1,5 +1,7 @@
 import "server-only";
 
+import type { PoolClient } from "pg";
+
 import { addMinutes } from "./time";
 import type {
   CreateAppointmentInput,
@@ -7,8 +9,8 @@ import type {
   CreateClientInput,
   CreateServiceInput
 } from "./schemas";
-import { getDatabaseConfig, getDatabasePool } from "@/server/database";
-import type { DatabaseConfig } from "@/server/database";
+import { withProfessionalTransaction } from "@/server/professional-context";
+import type { ProfessionalContext } from "@/server/professional-context";
 
 export type RepositoryResult<T> =
   | { status: "ready"; data: T }
@@ -61,7 +63,7 @@ export type WorkspaceOverview = {
   availability: AvailabilityListItem[];
 };
 
-type ReadyDatabaseConfig = Extract<DatabaseConfig, { status: "ready" }>;
+type ReadyProfessionalContext = Extract<ProfessionalContext, { status: "ready" }>;
 
 type ClientRow = {
   id: string;
@@ -103,16 +105,9 @@ type AvailabilityRow = {
 };
 
 export async function loadWorkspaceOverview(): Promise<RepositoryResult<WorkspaceOverview>> {
-  const config = getDatabaseConfig();
-
-  if (config.status !== "ready") {
-    return config;
-  }
-
   try {
-    const pool = getDatabasePool(config.databaseUrl);
-    const [clients, appointments, services, availability] = await Promise.all([
-      pool.query<ClientRow>(
+    const result = await withProfessionalTransaction(async (client, context) => {
+      const clients = await client.query<ClientRow>(
         `select
           c.id,
           c.internal_code,
@@ -127,9 +122,9 @@ export async function loadWorkspaceOverview(): Promise<RepositoryResult<Workspac
         group by c.id
         order by c.updated_at desc
         limit 100`,
-        [config.organizationId]
-      ),
-      pool.query<AppointmentRow>(
+        [context.organizationId]
+      );
+      const appointments = await client.query<AppointmentRow>(
         `select
           a.id,
           a.client_id,
@@ -147,33 +142,35 @@ export async function loadWorkspaceOverview(): Promise<RepositoryResult<Workspac
         where a.organization_id = $1
         order by a.starts_at asc
         limit 100`,
-        [config.organizationId]
-      ),
-      pool.query<ServiceRow>(
+        [context.organizationId]
+      );
+      const services = await client.query<ServiceRow>(
         `select id, name, duration_minutes, price_cents
         from public.services
         where organization_id = $1 and active = true
         order by name asc`,
-        [config.organizationId]
-      ),
-      pool.query<AvailabilityRow>(
+        [context.organizationId]
+      );
+      const availability = await client.query<AvailabilityRow>(
         `select id, weekday, starts_at::text, ends_at::text, location, online
         from public.professional_availability
         where organization_id = $1 and professional_profile_id = $2 and active = true
         order by weekday asc, starts_at asc`,
-        [config.organizationId, config.professionalProfileId]
-      )
-    ]);
+        [context.organizationId, context.professionalProfileId]
+      );
 
-    return {
-      status: "ready",
-      data: {
-        clients: clients.rows.map(toClient),
-        appointments: appointments.rows.map(toAppointment),
-        services: services.rows.map(toService),
-        availability: availability.rows.map(toAvailability)
-      }
-    };
+      return {
+        status: "ready" as const,
+        data: {
+          clients: clients.rows.map(toClient),
+          appointments: appointments.rows.map(toAppointment),
+          services: services.rows.map(toService),
+          availability: availability.rows.map(toAvailability)
+        }
+      };
+    });
+
+    return result.status === "ready" ? result : toRepositoryResult(result);
   } catch (error) {
     console.error(
       "[clients-agenda] failed to load workspace overview",
@@ -188,241 +185,284 @@ export async function loadWorkspaceOverview(): Promise<RepositoryResult<Workspac
 }
 
 export async function createClient(input: CreateClientInput) {
-  const config = requireReadyConfig();
-  const pool = getDatabasePool(config.databaseUrl);
+  const outcome = await withProfessionalTransaction(async (client, context) => {
+    const result = await client.query<{ id: string }>(
+      `insert into public.clients (
+        organization_id,
+        internal_code,
+        display_name,
+        status,
+        date_of_birth,
+        email,
+        phone,
+        objective_summary,
+        created_by
+      )
+      values ($1, $2, $3, $4, nullif($5, '')::date, nullif($6, ''), nullif($7, ''), nullif($8, ''), $9)
+      returning id`,
+      [
+        context.organizationId,
+        input.internalCode,
+        input.displayName,
+        input.status,
+        input.dateOfBirth ?? "",
+        input.email ?? "",
+        input.phone ?? "",
+        input.objectiveSummary ?? "",
+        context.profileId
+      ]
+    );
 
-  const result = await pool.query<{ id: string }>(
-    `insert into public.clients (
-      organization_id,
-      internal_code,
-      display_name,
-      status,
-      date_of_birth,
-      email,
-      phone,
-      objective_summary,
-      created_by
-    )
-    values ($1, $2, $3, $4, nullif($5, '')::date, nullif($6, ''), nullif($7, ''), nullif($8, ''), $9)
-    returning id`,
-    [
-      config.organizationId,
-      input.internalCode,
-      input.displayName,
-      input.status,
-      input.dateOfBirth ?? "",
-      input.email ?? "",
-      input.phone ?? "",
-      input.objectiveSummary ?? "",
-      config.profileId
-    ]
-  );
-
-  await recordAudit(pool, config, "client_changed", "clients", result.rows[0]?.id ?? null, {
-    action: "created",
-    status: input.status
+    await recordAudit(client, context, "client_changed", "clients", result.rows[0]?.id ?? null, {
+      action: "created",
+      status: input.status
+    });
   });
+
+  assertReadyOutcome(outcome);
 }
 
 export async function updateClientStatus(clientId: string, status: string) {
-  const config = requireReadyConfig();
-  const pool = getDatabasePool(config.databaseUrl);
+  const outcome = await withProfessionalTransaction(async (client, context) => {
+    const result = await client.query<{ id: string; status: string }>(
+      `update public.clients
+      set status = $1, updated_at = now()
+      where id = $2 and organization_id = $3
+      returning id, status`,
+      [status, clientId, context.organizationId]
+    );
 
-  const result = await pool.query<{ id: string; status: string }>(
-    `update public.clients
-    set status = $1, updated_at = now()
-    where id = $2 and organization_id = $3
-    returning id, status`,
-    [status, clientId, config.organizationId]
-  );
+    if (result.rowCount === 0) {
+      throw new Error("Client not found.");
+    }
 
-  if (result.rowCount === 0) {
-    throw new Error("Client not found.");
-  }
-
-  await recordAudit(pool, config, "client_changed", "clients", clientId, {
-    action: "status_updated",
-    status
+    await recordAudit(client, context, "client_changed", "clients", clientId, {
+      action: "status_updated",
+      status
+    });
   });
+
+  assertReadyOutcome(outcome);
 }
 
 export async function createService(input: CreateServiceInput) {
-  const config = requireReadyConfig();
-  const pool = getDatabasePool(config.databaseUrl);
-  const priceCents =
-    input.priceEuros === undefined ? null : Math.round(Number(input.priceEuros) * 100);
+  const outcome = await withProfessionalTransaction(async (client, context) => {
+    const priceCents =
+      input.priceEuros === undefined ? null : Math.round(Number(input.priceEuros) * 100);
+    const result = await client.query<{ id: string }>(
+      `insert into public.services (organization_id, name, duration_minutes, price_cents)
+      values ($1, $2, $3, $4)
+      returning id`,
+      [context.organizationId, input.name, input.durationMinutes, priceCents]
+    );
 
-  const result = await pool.query<{ id: string }>(
-    `insert into public.services (organization_id, name, duration_minutes, price_cents)
-    values ($1, $2, $3, $4)
-    returning id`,
-    [config.organizationId, input.name, input.durationMinutes, priceCents]
-  );
-
-  await recordAudit(pool, config, "organization_changed", "services", result.rows[0]?.id ?? null, {
-    action: "created",
-    durationMinutes: input.durationMinutes
+    await recordAudit(
+      client,
+      context,
+      "organization_changed",
+      "services",
+      result.rows[0]?.id ?? null,
+      {
+        action: "created",
+        durationMinutes: input.durationMinutes
+      }
+    );
   });
+
+  assertReadyOutcome(outcome);
 }
 
 export async function createAvailability(input: CreateAvailabilityInput) {
-  const config = requireReadyConfig();
-  const pool = getDatabasePool(config.databaseUrl);
+  const outcome = await withProfessionalTransaction(async (client, context) => {
+    const result = await client.query<{ id: string }>(
+      `insert into public.professional_availability (
+        organization_id,
+        professional_profile_id,
+        weekday,
+        starts_at,
+        ends_at,
+        location,
+        online
+      )
+      values ($1, $2, $3, $4::time, $5::time, nullif($6, ''), $7)
+      returning id`,
+      [
+        context.organizationId,
+        context.professionalProfileId,
+        input.weekday,
+        input.startsAt,
+        input.endsAt,
+        input.location ?? "",
+        input.online
+      ]
+    );
 
-  const result = await pool.query<{ id: string }>(
-    `insert into public.professional_availability (
-      organization_id,
-      professional_profile_id,
-      weekday,
-      starts_at,
-      ends_at,
-      location,
-      online
-    )
-    values ($1, $2, $3, $4::time, $5::time, nullif($6, ''), $7)
-    returning id`,
-    [
-      config.organizationId,
-      config.professionalProfileId,
-      input.weekday,
-      input.startsAt,
-      input.endsAt,
-      input.location ?? "",
-      input.online
-    ]
-  );
+    await recordAudit(
+      client,
+      context,
+      "organization_changed",
+      "professional_availability",
+      result.rows[0]?.id ?? null,
+      {
+        action: "created",
+        weekday: input.weekday
+      }
+    );
+  });
 
-  await recordAudit(
-    pool,
-    config,
-    "organization_changed",
-    "professional_availability",
-    result.rows[0]?.id ?? null,
-    {
-      action: "created",
-      weekday: input.weekday
-    }
-  );
+  assertReadyOutcome(outcome);
 }
 
 export async function createAppointment(input: CreateAppointmentInput) {
-  const config = requireReadyConfig();
-  const pool = getDatabasePool(config.databaseUrl);
-  const service = await pool.query<ServiceRow>(
-    `select id, duration_minutes, name, price_cents
-    from public.services
-    where id = $1 and organization_id = $2 and active = true`,
-    [input.serviceId, config.organizationId]
-  );
-  const duration = service.rows[0]?.duration_minutes;
+  const outcome = await withProfessionalTransaction(async (client, context) => {
+    const service = await client.query<ServiceRow>(
+      `select id, duration_minutes, name, price_cents
+      from public.services
+      where id = $1 and organization_id = $2 and active = true`,
+      [input.serviceId, context.organizationId]
+    );
+    const duration = service.rows[0]?.duration_minutes;
 
-  if (!duration) {
-    throw new Error("Service not found.");
-  }
-
-  const endsAt = addMinutes(input.startsAt, duration);
-  const availability = await pool.query<{ available: boolean; blocked: boolean }>(
-    `select
-      exists (
-        select 1
-        from public.professional_availability pa
-        where pa.organization_id = $1
-          and pa.professional_profile_id = $2
-          and pa.active = true
-          and pa.weekday = extract(isodow from ($3::timestamptz at time zone 'Europe/Madrid'))::integer
-          and pa.starts_at <= (($3::timestamptz at time zone 'Europe/Madrid')::time)
-          and pa.ends_at >= (($4::timestamptz at time zone 'Europe/Madrid')::time)
-      ) as available,
-      exists (
-        select 1
-        from public.availability_exceptions ae
-        where ae.organization_id = $1
-          and ae.professional_profile_id = $2
-          and tstzrange(ae.starts_at, ae.ends_at, '[)') && tstzrange($3::timestamptz, $4::timestamptz, '[)')
-      ) as blocked`,
-    [config.organizationId, config.professionalProfileId, input.startsAt, endsAt]
-  );
-
-  if (!availability.rows[0]?.available || availability.rows[0]?.blocked) {
-    throw new Error("Professional is not available.");
-  }
-
-  const result = await pool.query<{ id: string }>(
-    `insert into public.appointments (
-      organization_id,
-      client_id,
-      professional_profile_id,
-      service_id,
-      starts_at,
-      ends_at,
-      status,
-      modality,
-      location,
-      meeting_url,
-      administrative_notes,
-      created_by
-    )
-    values ($1, $2, $3, $4, $5::timestamptz, $6::timestamptz, $7, $8, nullif($9, ''), nullif($10, ''), nullif($11, ''), $12)
-    returning id`,
-    [
-      config.organizationId,
-      input.clientId,
-      config.professionalProfileId,
-      input.serviceId,
-      input.startsAt,
-      endsAt,
-      input.status,
-      input.modality,
-      input.location ?? "",
-      input.meetingUrl ?? "",
-      input.administrativeNotes ?? "",
-      config.profileId
-    ]
-  );
-
-  await recordAudit(
-    pool,
-    config,
-    "appointment_changed",
-    "appointments",
-    result.rows[0]?.id ?? null,
-    {
-      action: "created",
-      status: input.status
+    if (!duration) {
+      throw new Error("Service not found.");
     }
-  );
+
+    const endsAt = addMinutes(input.startsAt, duration);
+    const availability = await client.query<{ available: boolean; blocked: boolean }>(
+      `select
+        exists (
+          select 1
+          from public.professional_availability pa
+          where pa.organization_id = $1
+            and pa.professional_profile_id = $2
+            and pa.active = true
+            and pa.weekday = extract(isodow from ($3::timestamptz at time zone 'Europe/Madrid'))::integer
+            and pa.starts_at <= (($3::timestamptz at time zone 'Europe/Madrid')::time)
+            and pa.ends_at >= (($4::timestamptz at time zone 'Europe/Madrid')::time)
+        ) as available,
+        exists (
+          select 1
+          from public.availability_exceptions ae
+          where ae.organization_id = $1
+            and ae.professional_profile_id = $2
+            and tstzrange(ae.starts_at, ae.ends_at, '[)') && tstzrange($3::timestamptz, $4::timestamptz, '[)')
+        ) as blocked`,
+      [context.organizationId, context.professionalProfileId, input.startsAt, endsAt]
+    );
+
+    if (!availability.rows[0]?.available || availability.rows[0]?.blocked) {
+      throw new Error("Professional is not available.");
+    }
+
+    const result = await client.query<{ id: string }>(
+      `insert into public.appointments (
+        organization_id,
+        client_id,
+        professional_profile_id,
+        service_id,
+        starts_at,
+        ends_at,
+        status,
+        modality,
+        location,
+        meeting_url,
+        administrative_notes,
+        created_by
+      )
+      values ($1, $2, $3, $4, $5::timestamptz, $6::timestamptz, $7, $8, nullif($9, ''), nullif($10, ''), nullif($11, ''), $12)
+      returning id`,
+      [
+        context.organizationId,
+        input.clientId,
+        context.professionalProfileId,
+        input.serviceId,
+        input.startsAt,
+        endsAt,
+        input.status,
+        input.modality,
+        input.location ?? "",
+        input.meetingUrl ?? "",
+        input.administrativeNotes ?? "",
+        context.profileId
+      ]
+    );
+
+    await recordAudit(
+      client,
+      context,
+      "appointment_changed",
+      "appointments",
+      result.rows[0]?.id ?? null,
+      {
+        action: "created",
+        status: input.status
+      }
+    );
+  });
+
+  assertReadyOutcome(outcome);
 }
 
 export async function updateAppointmentStatus(appointmentId: string, status: string) {
-  const config = requireReadyConfig();
-  const pool = getDatabasePool(config.databaseUrl);
+  const outcome = await withProfessionalTransaction(async (client, context) => {
+    const result = await client.query<{ id: string }>(
+      `update public.appointments
+      set status = $1, updated_at = now()
+      where id = $2 and organization_id = $3
+      returning id`,
+      [status, appointmentId, context.organizationId]
+    );
 
-  const result = await pool.query<{ id: string }>(
-    `update public.appointments
-    set status = $1, updated_at = now()
-    where id = $2 and organization_id = $3
-    returning id`,
-    [status, appointmentId, config.organizationId]
-  );
+    if (result.rowCount === 0) {
+      throw new Error("Appointment not found.");
+    }
 
-  if (result.rowCount === 0) {
-    throw new Error("Appointment not found.");
-  }
-
-  await recordAudit(pool, config, "appointment_changed", "appointments", appointmentId, {
-    action: "status_updated",
-    status
+    await recordAudit(client, context, "appointment_changed", "appointments", appointmentId, {
+      action: "status_updated",
+      status
+    });
   });
+
+  assertReadyOutcome(outcome);
 }
 
-function requireReadyConfig() {
-  const config = getDatabaseConfig();
-
-  if (config.status !== "ready") {
-    throw new Error(`Database is not configured: ${config.missing.join(", ")}`);
+function toRepositoryResult<T>(
+  result: Exclude<ProfessionalContext, { status: "ready" }>
+): RepositoryResult<T> {
+  if (result.status === "not_configured") {
+    return result;
   }
 
-  return config;
+  if (result.status === "auth_required") {
+    return { status: "error", message: "Authentication required." };
+  }
+
+  return { status: "error", message: "Permission denied." };
+}
+
+function assertReadyOutcome(outcome: unknown) {
+  if (isBlockedOutcome(outcome)) {
+    if (outcome.status === "not_configured") {
+      throw new Error(`Database is not configured: ${outcome.missing.join(", ")}`);
+    }
+
+    if (outcome.status === "auth_required") {
+      throw new Error("Authentication required.");
+    }
+
+    throw new Error("Permission denied.");
+  }
+}
+
+function isBlockedOutcome(
+  outcome: unknown
+): outcome is Exclude<ProfessionalContext, { status: "ready" }> {
+  return (
+    typeof outcome === "object" &&
+    outcome !== null &&
+    "status" in outcome &&
+    outcome.status !== "ready"
+  );
 }
 
 function toClient(row: ClientRow): ClientListItem {
@@ -481,14 +521,14 @@ function toIso(value: Date | string | null): string | null {
 }
 
 async function recordAudit(
-  pool: ReturnType<typeof getDatabasePool>,
-  config: ReadyDatabaseConfig,
+  client: PoolClient,
+  config: ReadyProfessionalContext,
   eventType: "client_changed" | "appointment_changed" | "organization_changed",
   targetTable: string,
   targetId: string | null,
   metadata: Record<string, unknown>
 ) {
-  await pool.query(
+  await client.query(
     `insert into public.audit_events (
       organization_id,
       actor_profile_id,

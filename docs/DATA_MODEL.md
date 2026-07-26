@@ -34,6 +34,24 @@
 - `audit_events`: registra mutaciones de clientes, servicios, disponibilidad y citas sin guardar
   contenido clinico completo en metadata.
 
+## Foundation clinica
+
+- `clinical_intake_templates`: plantillas de entrevista/anamnesis por organizacion, con version,
+  secciones JSON y estado activo/inactivo.
+- `clinical_intake_responses`: respuestas persistentes por cliente y plantilla; guarda borradores y
+  envios con campos tipados como dato declarado, medido, calculado, estimado o nota profesional.
+- `consultations`: primeras visitas y seguimientos con estado `draft`/`finalized`, cita relacionada,
+  ADIME/PES opcional, nota privada, resumen compartido y auditoria de finalizacion.
+- `consultation_addenda`: correcciones posteriores a consultas finalizadas; no modifica el registro
+  original y conserva autor, fecha y motivo.
+- `anthropometry_sessions`: sesiones antropometricas por cliente con protocolo, condiciones,
+  instrumento, calibracion, medidas iniciales y calculos SQL generados para IMC, cintura/talla y
+  sumatorio de pliegues.
+- Inmutabilidad clinica: `consultations` finalizadas no pueden actualizarse; las correcciones pasan
+  por `consultation_addenda`.
+- Integridad clinica: FKs compuestas `(organization_id, client_id)` y `(organization_id, appointment_id)`
+  impiden vincular registros clinicos a clientes o citas de otra organizacion.
+
 ## Principios
 
 UUIDs, `created_at`, `updated_at`, constraints, indices por organizacion/cliente/fecha y RLS en todas las tablas expuestas.

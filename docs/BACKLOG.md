@@ -26,16 +26,22 @@ Leyenda: `MUST` bloquea MVP; `SHOULD` aporta valor alto; `COULD` se prepara sin 
 
 ### Fase 3 - Historia y consultas
 
-- Issue 11 [MUST]: Anamnesis versionada y configurable con borradores.
-- Issue 12 [MUST]: Consultas ADIME/PES opcionales, nota privada, resumen compartible y addenda.
+- Issue 11 [MUST] [EN RAMA]: Anamnesis inicial persistente con borradores. Pendiente:
+  editor completo de plantillas, envio al portal, versionado UI e historico de formularios enviados.
+- Issue 12 [MUST] [EN RAMA]: Consultas ADIME/PES opcionales, nota privada, resumen compartible
+  e inmutabilidad SQL de finalizadas. Pendiente: addenda UI, adjuntos y documento compartible.
 - Issue 13 [MUST]: Objetivos SMART, barreras, tareas y recomendaciones versionadas.
 - Issue 13.1 [SHOULD]: Separacion visible de privado, pendiente, compartido, publicado y retirado.
 
 ### Fase 4 - Antropometria
 
-- Issue 14 [MUST]: Protocolos y biblioteca configurable de medidas compatible con practica ISAK, sin afirmar certificacion.
-- Issue 15 [MUST]: Repeticiones, valores brutos, discrepancias, equipo, calibracion y calidad tecnica.
-- Issue 16 [MUST]: Calculos versionados, explicables y testeados.
+- Issue 14 [MUST] [EN RAMA]: Sesion antropometrica inicial persistente con protocolo, condiciones,
+  instrumento y calibracion. Pendiente: biblioteca configurable completa y compatibilidad ISAK sin
+  afirmar certificacion.
+- Issue 15 [MUST] [EN RAMA]: Medidas basicas y pliegues iniciales. Pendiente: repeticiones,
+  valores brutos, discrepancias, diametros, longitudes, calidad tecnica y TEM.
+- Issue 16 [MUST] [EN RAMA]: Calculos basicos SQL testeados: IMC, cintura/talla y sumatorio de
+  pliegues. Pendiente: ecuaciones de composicion corporal validadas y explicables.
 - Issue 16.1 [SHOULD]: Informe PDF antropometrico con secciones compartibles.
 
 ### Fase 5 - Alimentos y recetas

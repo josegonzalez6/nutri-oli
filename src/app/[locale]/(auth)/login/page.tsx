@@ -1,7 +1,8 @@
-import { ShieldAlert } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
 import { setRequestLocale } from "next-intl/server";
 
 import { StatePanel } from "@/components/state-panel";
+import { LoginForm } from "@/features/auth/login-form";
 import type { Locale } from "@/i18n/routing";
 import { routing } from "@/i18n/routing";
 
@@ -16,11 +17,13 @@ export default async function LoginPage({ params }: { params: Promise<{ locale: 
     <main className="grid min-h-screen place-items-center bg-[var(--background)] p-4">
       <div className="w-full max-w-md">
         <StatePanel
-          description="Supabase Auth todavia no esta conectado a una accion de inicio de sesion en esta PR. El registro libre de clientes permanece desactivado."
-          icon={<ShieldAlert aria-hidden="true" className="size-6" />}
-          title="Acceso pendiente de conectar"
-          tone="warning"
-        />
+          description="Acceso profesional protegido por Supabase Auth. El registro libre de clientes permanece desactivado."
+          icon={<ShieldCheck aria-hidden="true" className="size-6" />}
+          title="Acceso profesional"
+          tone="info"
+        >
+          <LoginForm locale={locale} />
+        </StatePanel>
       </div>
     </main>
   );

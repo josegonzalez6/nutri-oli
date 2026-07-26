@@ -7,7 +7,11 @@ const webServerCommand =
 
 export default defineConfig({
   testDir: "./src/test/e2e",
-  timeout: 30_000,
+  timeout: process.env.NEXT_PUBLIC_SUPABASE_URL ? 90_000 : 30_000,
+  expect: {
+    timeout: process.env.NEXT_PUBLIC_SUPABASE_URL ? 20_000 : 5_000
+  },
+  workers: process.env.NEXT_PUBLIC_SUPABASE_URL ? 1 : undefined,
   use: {
     baseURL,
     trace: "on-first-retry"

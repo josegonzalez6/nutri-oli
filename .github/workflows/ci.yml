@@ -21,13 +21,18 @@ jobs:
       - run: corepack pnpm lint
       - run: corepack pnpm typecheck
       - run: corepack pnpm test
-      - run: corepack pnpm build
       - run: corepack pnpm audit --audit-level moderate
-      - run: corepack pnpm exec playwright install --with-deps chromium
       - uses: supabase/setup-cli@v2
         with:
           version: latest
-      - run: supabase db start
+      - run: supabase start
+      - run: |
+          supabase status -o env \
+            | sed -n 's/^API_URL=/NEXT_PUBLIC_SUPABASE_URL=/p; s/^ANON_KEY=/NEXT_PUBLIC_SUPABASE_ANON_KEY=/p' \
+            | tr -d '"' \
+            >> "$GITHUB_ENV"
+      - run: corepack pnpm build
+      - run: corepack pnpm exec playwright install --with-deps chromium
       - run: supabase db reset
       - run: corepack pnpm test:e2e
         env:
