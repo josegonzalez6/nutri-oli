@@ -1,12 +1,15 @@
 begin;
 
-select plan(13);
+select plan(23);
 
 select has_table('public', 'clinical_intake_templates', 'clinical intake templates table exists');
 select has_table('public', 'clinical_intake_responses', 'clinical intake responses table exists');
 select has_table('public', 'consultations', 'consultations table exists');
 select has_table('public', 'consultation_addenda', 'consultation addenda table exists');
 select has_table('public', 'anthropometry_sessions', 'anthropometry sessions table exists');
+select has_table('public', 'anthropometry_session_measurements', 'anthropometry session measurements table exists');
+select has_table('public', 'anthropometry_protocols', 'anthropometry protocols table exists');
+select has_table('public', 'anthropometry_measurement_definitions', 'anthropometry measurement definitions table exists');
 
 select policies_are(
   'public',
@@ -18,8 +21,20 @@ select policies_are(
 select policies_are(
   'public',
   'anthropometry_sessions',
-  array['anthropometry_sessions_professional_mutate', 'anthropometry_sessions_professional_select'],
-  'anthropometry sessions has explicit professional RLS policies'
+  array[
+    'anthropometry_sessions_professional_delete_draft',
+    'anthropometry_sessions_professional_insert',
+    'anthropometry_sessions_professional_select',
+    'anthropometry_sessions_professional_update'
+  ],
+  'anthropometry sessions has explicit professional RLS policies by action'
+);
+
+select policies_are(
+  'public',
+  'anthropometry_session_measurements',
+  array['anthropometry_session_measurements_mutate', 'anthropometry_session_measurements_select'],
+  'anthropometry detailed measurements has explicit RLS policies'
 );
 
 set local role authenticated;
@@ -53,6 +68,46 @@ select lives_ok(
     )
   $$,
   'assigned professional can create anthropometry for own client'
+);
+
+select results_eq(
+  $$
+    select skinfold_sum_mm is null
+    from public.anthropometry_sessions
+    where client_id = '00000000-0000-4000-8000-000000000201'
+    order by created_at desc
+    limit 1
+  $$,
+  array[true],
+  'missing skinfolds are not converted to zero'
+);
+
+select lives_ok(
+  $$
+    update public.anthropometry_sessions
+    set workflow_status = 'completed',
+        status = 'finalized',
+        finalized_at = now(),
+        finalized_by = '00000000-0000-4000-8000-000000000010'
+    where client_id = '00000000-0000-4000-8000-000000000201'
+      and mass_kg = 73.2
+  $$,
+  'draft anthropometry can be finalized once'
+);
+
+select results_eq(
+  $$
+    with updated as (
+      update public.anthropometry_sessions
+      set observations = 'forged edit after finalization'
+      where client_id = '00000000-0000-4000-8000-000000000201'
+        and mass_kg = 73.2
+      returning 1
+    )
+    select count(*)::integer from updated
+  $$,
+  array[0],
+  'completed anthropometry session is immutable through RLS'
 );
 
 select lives_ok(
@@ -131,6 +186,42 @@ select results_eq(
   $$select count(*)::integer from public.clinical_intake_responses$$,
   array[0],
   'assistant cannot read anamnesis responses'
+);
+
+select results_eq(
+  $$select count(*)::integer from public.anthropometry_sessions$$,
+  array[0],
+  'assistant cannot read anthropometry sessions'
+);
+
+select results_eq(
+  $$select count(*)::integer from public.anthropometry_session_measurements$$,
+  array[0],
+  'assistant cannot read detailed anthropometry measurements'
+);
+
+select throws_ok(
+  $$
+    insert into public.anthropometry_sessions (
+      organization_id,
+      client_id,
+      professional_profile_id,
+      mass_kg,
+      height_cm,
+      created_by
+    )
+    values (
+      '00000000-0000-4000-8000-000000000001',
+      '00000000-0000-4000-8000-000000000201',
+      '00000000-0000-4000-8000-000000000020',
+      74,
+      172,
+      '00000000-0000-4000-8000-000000000920'
+    )
+  $$,
+  '42501',
+  null,
+  'assistant cannot insert anthropometry'
 );
 
 select * from finish();
