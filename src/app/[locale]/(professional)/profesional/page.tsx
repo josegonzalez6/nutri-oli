@@ -7,6 +7,7 @@ import {
   Stethoscope,
   UserRoundCheck
 } from "lucide-react";
+import Link from "next/link";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { AppShell } from "@/components/app-shell";
@@ -238,7 +239,14 @@ export default async function ProfessionalDashboard({
                     >
                       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                         <div>
-                          <h3 className="font-semibold">{client.displayName}</h3>
+                          <h3 className="font-semibold">
+                            <Link
+                              className="underline-offset-4 hover:underline"
+                              href={`/${locale}/profesional/clientes/${client.id}`}
+                            >
+                              {client.displayName}
+                            </Link>
+                          </h3>
                           <p className="text-sm text-[var(--muted)]">
                             {client.internalCode} ·{" "}
                             {client.objectiveSummary ?? "Sin objetivo registrado"}
