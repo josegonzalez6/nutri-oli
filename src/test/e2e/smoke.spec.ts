@@ -8,6 +8,9 @@ test("professional dashboard renders without authentication bypass assumptions",
 
   await expect(page.getByRole("heading", { name: "Panel profesional" })).toBeVisible();
   await expect(page.getByRole("navigation", { name: "Navegacion principal" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Atencion requerida" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Clientes en seguimiento" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Consulta guiada" })).toBeVisible();
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
 });
 

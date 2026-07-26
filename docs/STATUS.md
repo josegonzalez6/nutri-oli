@@ -2,7 +2,7 @@
 
 ## Fase actual
 
-Fase 2 - Catalogo alimentario operativo local.
+Fase 2 - Dashboard operativo, clientes y agenda.
 
 ## Trabajo completado
 
@@ -30,12 +30,17 @@ Fase 2 - Catalogo alimentario operativo local.
 - Esquema Supabase de alimentos creado: `food_sources`, `nutrients`, `foods`, `food_nutrients`, `food_synonyms`.
 - RLS de alimentos aplicada para lectura publica solo de alimentos globales verificados y acceso por organizacion para alimentos privados.
 - Pantalla profesional `/es/profesional/alimentos` implementada con busqueda, filtro por categoria y tabla nutricional.
+- Prompts maestro y benchmark funcional leidos completos y usados como especificacion permanente del proyecto.
+- Benchmark competitivo documentado con fuentes oficiales publicas revisadas el 2026-07-26: Nutrium, ICNS, DietoPro, Nutriplo, Sabea, dietetic.app, i-Diet y MiNutriApp.
+- Documentos funcionales creados: `docs/COMPETITOR_BENCHMARK.md`, `docs/FEATURE_MATRIX.md`, `docs/PRODUCT_GAPS.md`, `docs/NUTRI_OLI_FUNCTIONAL_SCOPE.md`, `docs/USER_FLOWS.md`, `docs/CLINICAL_SAFETY_RULES.md` y `docs/LEGAL_REVIEW_REQUIRED.md`.
+- Backlog actualizado con prioridades `MUST`, `SHOULD`, `COULD` y `WON'T NOW` derivadas del benchmark.
+- Dashboard profesional convertido en centro operativo con agenda demo, cola de atencion, clientes en seguimiento y consulta guiada.
 
 ## Trabajo pendiente
 
 - Validacion clinica, ISAK y juridica por profesionales humanos antes de produccion.
 - Revision de licencia BEDCA antes de distribuir datos o usarlos en produccion.
-- CI remoto de la PR debe volver a pasar tras los commits de catalogo alimentario.
+- CI remoto de la PR debe volver a pasar tras los commits de benchmark/dashboard.
 
 ## Bloqueos
 
@@ -46,19 +51,21 @@ Fase 2 - Catalogo alimentario operativo local.
 - Aplicacion sanitaria: no afirmar cumplimiento legal ni suficiencia clinica sin revision externa.
 - El catalogo alimentario no sustituye validacion clinica ni revision dietetica humana.
 - BEDCA esta disponible solo como import local; el XLSX y el JSON generado no se versionan.
+- Las funciones de competidores estan documentadas como evidencia publica anunciada/observada, no como verificacion tecnica interna.
+- IA, pagos, facturacion, vademecum farmaco-nutriente, apps nativas y colectividades quedan fuera del MVP.
 - `psql` no esta instalado fuera de Supabase CLI.
 - `supabase db lint` sobre todos los schemas incluye avisos de la extension pgTAP; lint limitado a `public,private` pasa sin errores.
 
 ## Ultimo commit
 
-- `HEAD` - pendiente de commit local BEDCA/catalogo.
+- `HEAD` - `5646ce9 docs: document food catalog foundation`; cambios locales de benchmark/dashboard pendientes de commit.
 
 ## Ultimos comandos de validacion ejecutados
 
 - `corepack pnpm format:check`: PASS.
 - `corepack pnpm lint`: PASS.
 - `corepack pnpm typecheck`: PASS.
-- `corepack pnpm test`: PASS, 3 archivos y 12 tests.
+- `corepack pnpm test`: PASS, 4 archivos y 15 tests.
 - `corepack pnpm build`: PASS, rutas `/es`, `/ca`, `/login`, `/portal`, `/profesional`, `/profesional/alimentos`.
 - `supabase db reset`: PASS con migracion `202607250002_foods_foundation.sql`.
 - `corepack pnpm bedca:import /Users/josegonzalez/Documents/Proyectos/NUTRI/data/bedca.xlsx --database-url=<local Supabase DB_URL>`: PASS, 957 alimentos importados localmente.
@@ -70,4 +77,4 @@ Fase 2 - Catalogo alimentario operativo local.
 
 ## Proxima accion automatica
 
-- Publicar commits pequenos en la PR existente y revisar CI remoto.
+- Publicar commits pequenos de benchmark/dashboard en la PR existente y revisar CI remoto.
