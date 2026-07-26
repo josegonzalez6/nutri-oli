@@ -41,6 +41,7 @@ Fase 2 - Clientes + agenda persistente con Supabase.
 - Playwright e2e corregido para ejecutar contra `next start` tras build.
 - PR #1 no se pudo fusionar desde Codex porque GitHub exige 1 approving review con permisos de escritura.
 - Rama `feat/persistent-clients-agenda` creada sobre `chore/project-foundation`.
+- Pull request apilada abierta: `https://github.com/josegonzalez6/nutri-oli/pull/40`.
 - Dashboard profesional `/es/profesional` conectado a Supabase; sin fixtures de produccion.
 - CRUD real de clientes en `/es/profesional/clientes` con Server Actions, validacion Zod, auditoria y estados loading/empty/error/configuracion pendiente.
 - Agenda real en `/es/profesional/agenda` con servicios configurables, disponibilidad profesional, citas, estados de cita e historial de cambios.
@@ -93,4 +94,4 @@ Fase 2 - Clientes + agenda persistente con Supabase.
 
 ## Proxima accion automatica
 
-- Hacer commit/push de `feat/persistent-clients-agenda` y abrir PR apilada sobre `chore/project-foundation` mientras PR #1 siga bloqueada.
+- Revisar CI remoto de PR #40 y retargetearla a `main` cuando PR #1 se fusione.
