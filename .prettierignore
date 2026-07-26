@@ -1,0 +1,8 @@
+node_modules
+.next
+coverage
+playwright-report
+test-results
+pnpm-lock.yaml
+PROMPT_MASTER_CODEX_NUTRI_OLI.md
+PROMPT_BENCHMARK_FUNCIONAL_NUTRI_OLI.md

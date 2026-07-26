@@ -1,0 +1,17 @@
+.DS_Store
+.env
+.env.*
+!.env.example
+.vercel
+.next
+node_modules
+coverage
+playwright-report
+test-results
+*.tsbuildinfo
+data/imports/*
+!data/imports/.gitkeep
+data/generated/*
+!data/generated/.gitkeep
+supabase/.branches
+supabase/.temp

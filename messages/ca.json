@@ -1,0 +1,42 @@
+{
+  "brand": {
+    "name": "Nutri-Oli"
+  },
+  "nav": {
+    "home": "Inici",
+    "schedule": "Agenda",
+    "clients": "Clients",
+    "consultations": "Consultes",
+    "anthropometry": "Antropometria",
+    "dietPlans": "Plans dietetics",
+    "messages": "Missatges",
+    "documents": "Documents",
+    "settings": "Configuracio"
+  },
+  "professional": {
+    "title": "Panell professional",
+    "subtitle": "Vista operativa de consulta, clients i tasques cliniques.",
+    "nextAppointment": "Proxima consulta",
+    "pendingPlans": "Plans pendents",
+    "unreadMessages": "Missatges sense llegir",
+    "consents": "Consentiments",
+    "today": "Avui",
+    "risk": "Revisio humana requerida",
+    "empty": "No hi ha incidencies critiques registrades en dades demo."
+  },
+  "client": {
+    "title": "Portal del client",
+    "subtitle": "Acces privat a pla publicat, cites, registres i missatges.",
+    "plan": "El meu pla",
+    "progress": "El meu progres",
+    "tasks": "Tasques pendents",
+    "privacy": "Nomes es mostren elements publicats per a aquest client."
+  },
+  "auth": {
+    "title": "Acces segur",
+    "email": "Correu electronic",
+    "password": "Contrasenya",
+    "submit": "Entrar",
+    "notice": "El registre lliure de clients esta desactivat per defecte."
+  }
+}
