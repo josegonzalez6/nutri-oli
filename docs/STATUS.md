@@ -2,7 +2,7 @@
 
 ## Fase actual
 
-Fase 2 - Clientes + agenda persistente con Supabase.
+Fase 0 - Normalizacion de integracion antes de nuevas verticales.
 
 ## Trabajo completado
 
@@ -48,6 +48,15 @@ Fase 2 - Clientes + agenda persistente con Supabase.
 - Migracion `202607260001_clients_agenda_persistence.sql` creada con `professional_availability`, `availability_exceptions`, `appointment_status_history`, grants explicitos, policies RLS y constraint anti-solape `appointments_no_professional_overlap`.
 - Seed ficticio de desarrollo/test ampliado con usuario demo, profesional demo, clientes demo, servicios, disponibilidad y citas. No contiene datos reales de pacientes.
 - CI web actualizado para ejecutar E2E contra Supabase local configurado con los IDs ficticios de seed.
+- `PROMPT_MAESTRO_FINAL_NUTRI_OLI_CODEX.md` leido completo el 2026-07-26 y adoptado como especificacion principal consolidada.
+- PR #1 inspeccionada de nuevo el 2026-07-26: base `main`, head `chore/project-foundation`, mergeable, checks `web`/`database` verdes, `reviewDecision=REVIEW_REQUIRED`, sin reviews.
+- PR #40 inspeccionada de nuevo el 2026-07-26: base `chore/project-foundation`, head `feat/persistent-clients-agenda`, mergeable, checks `web`/`database` verdes.
+- PRs Dependabot #34-#39 existen contra `chore/project-foundation`; quedan dependientes de la normalizacion de PR #1.
+- Intento de squash merge de PR #1: bloqueado por politica de rama.
+- Intento de auto-merge de PR #1: bloqueado porque auto-merge no esta habilitado en el repositorio.
+- Agentes paralelos lanzados para revision tecnica/producto y seguridad/RLS de la integracion actual.
+- Revision tecnica/producto y revision de seguridad/RLS completadas; ambas recomiendan no abrir nuevas verticales hasta normalizar PR #1/#40.
+- Migracion `202607260002_integrity_and_rls_hardening.sql` creada para reforzar integridad multi-organizacion, RLS de clientes por asignacion, mutaciones cross-org denegadas y Storage path parsing seguro.
 
 ## Trabajo pendiente
 
@@ -55,11 +64,13 @@ Fase 2 - Clientes + agenda persistente con Supabase.
 - Revision de licencia BEDCA antes de distribuir datos o usarlos en produccion.
 - Autenticacion real y sesion de usuario siguen pendientes; las variables server-only seleccionan workspace demo/local para la vertical actual.
 - El portal cliente, planes, mensajes y documentos siguen siendo demo/no persistentes.
-- CI remoto de la nueva PR debe pasar tras publicar la rama.
+- Corregir o revisar en PR #40 cualquier hallazgo de seguridad restante antes de retargetear/fusionar.
+- No abrir una tercera vertical apilada hasta resolver PR #1 o definir una estrategia explicita que no agrave dependencias.
 
 ## Bloqueos
 
 - PR #1 esta bloqueado por regla de rama: GitHub requiere 1 approving review de un usuario con permisos de escritura antes del squash merge.
+- Auto-merge no esta habilitado en el repositorio (`enablePullRequestAutoMerge`).
 
 ## Riesgos
 
@@ -70,12 +81,15 @@ Fase 2 - Clientes + agenda persistente con Supabase.
 - IA, pagos, facturacion, vademecum farmaco-nutriente, apps nativas y colectividades quedan fuera del MVP.
 - Dashboard, clientes y agenda ya leen/escriben Supabase en esta rama; portal, planes, mensajes y documentos siguen siendo demo/no persistentes.
 - El acceso applicativo actual usa configuracion server-only de workspace profesional; RLS esta implementado y probado en SQL, pero falta conectar Auth real a las queries de usuario final.
+- `main` sigue en el commit base `65117ed`; la fundacion real del producto aun no esta integrada.
+- Seguir implementando Auth encima de PR #40 crearia una tercera PR apilada, contrario al prompt maestro mientras no exista estrategia explicita.
+- PR #40 sigue sin Auth real por sesion; no debe considerarse autorizacion end-to-end desde la app hasta eliminar workspace server-only por variables.
 - `psql` no esta instalado fuera de Supabase CLI.
 - `supabase db lint` sobre todos los schemas incluye avisos de la extension pgTAP; lint limitado a `public,private` pasa sin errores.
 
 ## Ultimo commit
 
-- Cambios locales de `feat/persistent-clients-agenda` pendientes de commits pequeños.
+- La rama `feat/persistent-clients-agenda` contiene la normalizacion documental y de seguridad de PR #40; revisar `git log --oneline -5` para hashes exactos.
 
 ## Ultimos comandos de validacion ejecutados
 
@@ -84,9 +98,9 @@ Fase 2 - Clientes + agenda persistente con Supabase.
 - `corepack pnpm typecheck`: PASS.
 - `corepack pnpm test`: PASS, 4 archivos y 14 tests.
 - `corepack pnpm build`: PASS, rutas dinamicas `/[locale]/profesional`, `/[locale]/profesional/agenda`, `/[locale]/profesional/clientes`.
-- `supabase db reset`: PASS con migraciones `202607250001_foundation.sql`, `202607250002_foods_foundation.sql` y `202607260001_clients_agenda_persistence.sql`.
+- `supabase db reset`: PASS con migraciones `202607250001_foundation.sql`, `202607250002_foods_foundation.sql`, `202607260001_clients_agenda_persistence.sql` y `202607260002_integrity_and_rls_hardening.sql`.
 - `corepack pnpm bedca:import /Users/josegonzalez/Documents/Proyectos/NUTRI/data/bedca.xlsx --database-url=<local Supabase DB_URL>`: PASS, 957 alimentos importados localmente.
-- `supabase test db`: PASS, 2 archivos y 30 tests.
+- `supabase test db`: PASS, 2 archivos y 36 tests.
 - `supabase db lint --schema public,private --fail-on error`: PASS.
 - `corepack pnpm test:e2e`: PASS, 14 tests en Chromium y mobile con axe; valida CRUD cliente y cita persistente.
 - `corepack pnpm audit --audit-level moderate`: PASS, sin vulnerabilidades conocidas.
@@ -94,4 +108,4 @@ Fase 2 - Clientes + agenda persistente con Supabase.
 
 ## Proxima accion automatica
 
-- Revisar CI remoto de PR #40 y retargetearla a `main` cuando PR #1 se fusione.
+- Mantener PR #1 y PR #40 listas, documentar el bloqueo humano, incorporar revisiones de agentes y no iniciar Auth real hasta que la cadena de integracion quede normalizada o el usuario habilite una estrategia de integracion alternativa.
