@@ -101,7 +101,7 @@ Fase 8 parcial - Recetas y planes dieteticos persistentes, apilada sobre PR #46 
 - RLS de recetas y planes limitada a owner/nutritionist; assistant no puede leer ni escribir. Todas las mutaciones server-side se auditan.
 - Pantallas persistentes `/es/profesional/recetas` y `/es/profesional/planes` implementadas con formularios Zod, estados de configuracion/error/vacio, totales nutricionales y datos de cliente.
 - E2E ampliado para crear receta, ingrediente, plan, comida y alimento, recargar y comprobar persistencia y axe.
-- PR #47 pendiente de apertura al finalizar los gates de esta vertical.
+- PR #47 abierta: `https://github.com/josegonzalez6/nutri-oli/pull/47`, base `feat/macro-exchanges-foundation`, head `feat/recipes-plans-foundation`; checks remotos `web` y `database` verdes.
 
 ## Trabajo pendiente
 
@@ -149,13 +149,13 @@ Fase 8 parcial - Recetas y planes dieteticos persistentes, apilada sobre PR #46 
 - `corepack pnpm format:check`: PASS.
 - `corepack pnpm lint`: PASS.
 - `corepack pnpm typecheck`: PASS.
-- `corepack pnpm test`: PASS, 9 archivos y 37 tests.
+- `corepack pnpm test`: PASS, 10 archivos y 40 tests.
 - `corepack pnpm build`: PASS, incluye ruta dinamica `/[locale]/profesional/clientes/[id]/antropometria/[sessionId]/informe` y `/[locale]/profesional/equivalencias`.
-- `supabase db reset`: PASS con migraciones hasta `202607270001_anthropometry_reports.sql`.
+- `supabase db reset`: PASS con migraciones hasta `202607270003_recipes_plans_foundation.sql`.
 - `corepack pnpm bedca:import /Users/josegonzalez/Documents/Proyectos/NUTRI/data/bedca.xlsx --database-url=<local Supabase DB_URL>`: PASS, 957 alimentos importados localmente.
-- `supabase test db`: PASS, 5 archivos y 79 tests.
+- `supabase test db`: PASS, 6 archivos y 96 tests.
 - `supabase db lint --schema public,private --fail-on error`: PASS.
-- `corepack pnpm test:e2e`: PASS, 18 tests en Chromium y mobile con axe en `main`, Supabase Auth real local y `auth.getUser()`; valida login, CRUD cliente, cita persistente, ayuda antropometrica, tercera medicion, persistencia con recarga, finalizacion, descarga PDF y equivalencias/raciones macro persistentes.
+- `corepack pnpm test:e2e`: PASS, 22 tests en Chromium y mobile con axe en `main`, Supabase Auth real local y `auth.getUser()`; valida login, CRUD cliente, cita persistente, ayuda antropometrica, tercera medicion, persistencia con recarga, finalizacion, descarga PDF, equivalencias/raciones macro, recetas e items de planes persistentes.
 - `corepack pnpm audit --audit-level moderate`: PASS, sin vulnerabilidades conocidas.
 - Secret scan rapido con `rg`: sin secretos reales; solo placeholders en `.env.example` y referencias `env(...)` de Supabase local.
 
