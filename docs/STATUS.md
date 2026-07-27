@@ -94,6 +94,7 @@ Fase 7 parcial - Equivalencias y raciones de macronutrientes, apilada sobre PR #
 - Migracion `202607270002_macro_exchanges_foundation.sql` creada con `macro_portion_systems`, `exchange_groups`, `exchange_items` y `meal_macro_targets`, RLS por organizacion y roles profesionales, auditoria y constraints de unidades.
 - Pantalla profesional `/es/profesional/equivalencias` implementada y enlazada en el sidebar: crea sistemas de raciones, grupos de equivalencia, alimentos equivalentes y objetivos por comida con persistencia real en Supabase.
 - E2E ampliado para crear un sistema macro, crear un grupo, anadir un alimento, recargar y verificar raciones calculadas y ajuste dentro de tolerancia en escritorio y movil.
+- PR #46 abierta: `https://github.com/josegonzalez6/nutri-oli/pull/46`, base `feat/anthropometry-results-report`, head `feat/macro-exchanges-foundation`.
 
 ## Trabajo pendiente
 
@@ -153,4 +154,4 @@ Fase 7 parcial - Equivalencias y raciones de macronutrientes, apilada sobre PR #
 
 ## Proxima accion automatica
 
-- Abrir PR apilada de `feat/macro-exchanges-foundation` contra `feat/anthropometry-results-report`, documentando dependencia de PR #1/#40/#41/#42/#45, y continuar despues con recetas y editor de dietas.
+- Continuar con recetas persistentes y editor inicial de dietas sobre la rama apilada siguiente, manteniendo dependencia de PR #1/#40/#41/#42/#45/#46.
