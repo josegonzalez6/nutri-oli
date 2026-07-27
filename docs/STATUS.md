@@ -2,7 +2,7 @@
 
 ## Fase actual
 
-Fase 6 parcial - Resultados e informe antropometrico, apilado sobre PR #42 mientras PR #1/#40/#41 siguen pendientes de integracion humana.
+Fase 7 parcial - Equivalencias y raciones de macronutrientes, apilada sobre PR #45 mientras PR #1/#40/#41/#42 siguen pendientes de integracion humana.
 
 ## Trabajo completado
 
@@ -88,13 +88,20 @@ Fase 6 parcial - Resultados e informe antropometrico, apilado sobre PR #42 mient
 - Generacion/descarga de informe registrada en `anthropometry_reports` y auditada en `audit_events`; no se almacena PDF en Storage ni se exponen rutas con PII.
 - Finalizacion de sesion antropometrica reforzada: requiere todas las medidas del protocolo completas, conserva mediciones discordantes y bloquea informe desde sesiones incompletas.
 - E2E ampliado para completar 18 medidas minimas, forzar tercera toma, guardar borrador, recargar, finalizar, recargar y descargar PDF.
+- Rama `feat/macro-exchanges-foundation` creada sobre `feat/anthropometry-results-report`.
+- Motor nutricional puro inicial creado en `src/features/nutrition/nutrient-engine.ts`: escala gramos/ml, conserva nutrientes ausentes como `null`, calcula cobertura de datos, agrega alimentos, calcula recetas, raciones macro y cantidades equivalentes sin `eval`.
+- Motor de raciones macro creado en `src/features/nutrition/macro-engine.ts` con calculo de raciones HC/proteina/grasa/fibra, ajuste frente a tolerancia y preservacion de datos ausentes.
+- Migracion `202607270002_macro_exchanges_foundation.sql` creada con `macro_portion_systems`, `exchange_groups`, `exchange_items` y `meal_macro_targets`, RLS por organizacion y roles profesionales, auditoria y constraints de unidades.
+- Pantalla profesional `/es/profesional/equivalencias` implementada y enlazada en el sidebar: crea sistemas de raciones, grupos de equivalencia, alimentos equivalentes y objetivos por comida con persistencia real en Supabase.
+- E2E ampliado para crear un sistema macro, crear un grupo, anadir un alimento, recargar y verificar raciones calculadas y ajuste dentro de tolerancia en escritorio y movil.
 
 ## Trabajo pendiente
 
 - Validacion clinica, ISAK y juridica por profesionales humanos antes de produccion.
 - Revision de licencia BEDCA antes de distribuir datos o usarlos en produccion.
 - Completar Auth real: invitaciones, recuperacion, verificacion, MFA profesional, revocacion, proteccion estricta por rol y portal cliente autenticado.
-- El portal cliente, planes, recetas, equivalencias, mensajes, documentos, consentimientos y notificaciones siguen sin vertical persistente operativa.
+- El portal cliente, planes, recetas, mensajes, documentos, consentimientos y notificaciones siguen sin vertical persistente operativa.
+- Equivalencias y raciones macro tienen fundacion persistente, pero faltan versionado avanzado, asignacion a cliente, impresion/publicacion, generador asistido, integracion con editor de dietas y portal.
 - Completar antropometria con TEM, addenda UI, resultados longitudinales avanzados, graficos avanzados, PDF paginado completo, publicacion granular al cliente y ecuaciones predictivas verificadas.
 - Convertir anamnesis en plantillas editables/enviables al portal con versionado completo.
 - Convertir consultas finalizadas en documentos compartibles con addenda UI y adjuntos.
@@ -119,6 +126,7 @@ Fase 6 parcial - Resultados e informe antropometrico, apilado sobre PR #42 mient
 - La nueva rama es una tercera PR apilada por instruccion explicita de continuar; depende de la integracion de PR #1 y PR #40.
 - La rama `feat/anthropometry-measurement-workflow` es una cuarta capa apilada y depende de PR #41, que a su vez depende de PR #40.
 - La rama `feat/anthropometry-results-report` es una quinta capa apilada y depende de PR #42.
+- La rama `feat/macro-exchanges-foundation` es una sexta capa apilada y depende de PR #45.
 - Auth esta iniciada pero no completa: no hay MFA, invitaciones, recuperacion, revocacion ni portal autenticado funcional.
 - En macOS/Colima local, el stack completo de Supabase fallo al arrancar `vector` por montaje de Docker socket y Storage quedo inestable; la validacion Auth/E2E se ejecuto con DB, Kong y Auth, excluyendo servicios no usados por esta vertical.
 - `psql` no esta instalado fuera de Supabase CLI.
@@ -133,16 +141,16 @@ Fase 6 parcial - Resultados e informe antropometrico, apilado sobre PR #42 mient
 - `corepack pnpm format:check`: PASS.
 - `corepack pnpm lint`: PASS.
 - `corepack pnpm typecheck`: PASS.
-- `corepack pnpm test`: PASS, 7 archivos y 26 tests.
-- `corepack pnpm build`: PASS, incluye ruta dinamica `/[locale]/profesional/clientes/[id]/antropometria/[sessionId]/informe`.
+- `corepack pnpm test`: PASS, 9 archivos y 37 tests.
+- `corepack pnpm build`: PASS, incluye ruta dinamica `/[locale]/profesional/clientes/[id]/antropometria/[sessionId]/informe` y `/[locale]/profesional/equivalencias`.
 - `supabase db reset`: PASS con migraciones hasta `202607270001_anthropometry_reports.sql`.
 - `corepack pnpm bedca:import /Users/josegonzalez/Documents/Proyectos/NUTRI/data/bedca.xlsx --database-url=<local Supabase DB_URL>`: PASS, 957 alimentos importados localmente.
-- `supabase test db`: PASS, 4 archivos y 67 tests.
+- `supabase test db`: PASS, 5 archivos y 79 tests.
 - `supabase db lint --schema public,private --fail-on error`: PASS.
-- `corepack pnpm test:e2e`: PASS, 16 tests en Chromium y mobile con axe en `main`, Supabase Auth real local y `auth.getUser()`; valida login, CRUD cliente, cita persistente, ayuda antropometrica, tercera medicion, persistencia con recarga, finalizacion y descarga PDF.
+- `corepack pnpm test:e2e`: PASS, 18 tests en Chromium y mobile con axe en `main`, Supabase Auth real local y `auth.getUser()`; valida login, CRUD cliente, cita persistente, ayuda antropometrica, tercera medicion, persistencia con recarga, finalizacion, descarga PDF y equivalencias/raciones macro persistentes.
 - `corepack pnpm audit --audit-level moderate`: PASS, sin vulnerabilidades conocidas.
 - Secret scan rapido con `rg`: sin secretos reales; solo placeholders en `.env.example` y referencias `env(...)` de Supabase local.
 
 ## Proxima accion automatica
 
-- Abrir PR apilada de `feat/anthropometry-results-report` contra `feat/anthropometry-measurement-workflow`, documentando dependencia de PR #1/#40/#41/#42 y continuar despues con equivalencias y raciones de macronutrientes.
+- Abrir PR apilada de `feat/macro-exchanges-foundation` contra `feat/anthropometry-results-report`, documentando dependencia de PR #1/#40/#41/#42/#45, y continuar despues con recetas y editor de dietas.

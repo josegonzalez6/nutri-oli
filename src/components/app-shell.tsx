@@ -6,6 +6,7 @@ import {
   ClipboardList,
   Home,
   LogOut,
+  Scale,
   Search,
   Stethoscope,
   UserPlus,
@@ -62,6 +63,14 @@ export function AppShell({
           : `/${locale}/${basePath}#plan`,
       label: "Alimentos",
       icon: <Apple aria-hidden="true" />
+    },
+    {
+      href:
+        section === "professional"
+          ? `/${locale}/profesional/equivalencias`
+          : `/${locale}/${basePath}#equivalencias`,
+      label: "Equivalencias",
+      icon: <Scale aria-hidden="true" />
     }
   ];
 
@@ -110,7 +119,7 @@ export function AppShell({
         ) : null}
       </aside>
       <div className="min-w-0">
-        <header className="sticky top-0 z-20 border-b border-[var(--border)] bg-[color-mix(in_srgb,var(--background)_92%,white)] px-4 py-3 backdrop-blur sm:px-6 lg:px-8">
+        <header className="z-20 border-b border-[var(--border)] bg-[color-mix(in_srgb,var(--background)_92%,white)] px-4 py-3 backdrop-blur sm:px-6 lg:sticky lg:top-0 lg:px-8">
           <div className="mx-auto flex max-w-7xl flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div
               aria-label="Miga de pan"
