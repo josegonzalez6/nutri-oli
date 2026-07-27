@@ -114,6 +114,7 @@ export function AnthropometryMeasurementWorkflow({
     ({ evaluation }) =>
       evaluation.status === "within_tolerance" || evaluation.status === "completed"
   ).length;
+  const incompleteCount = definitions.length - completedCount;
   const thirdRequired = evaluations.filter(
     ({ evaluation }) => evaluation.status === "third_required"
   ).length;
@@ -373,13 +374,18 @@ export function AnthropometryMeasurementWorkflow({
           </button>
           <button
             className="inline-flex items-center justify-center gap-2 rounded-md border border-[var(--border)] px-4 py-2 text-sm font-semibold"
-            disabled={pending || thirdRequired > 0}
+            disabled={pending || thirdRequired > 0 || incompleteCount > 0}
             name="mode"
             type="submit"
             value="finalize"
           >
             Finalizar sesion
           </button>
+          {incompleteCount > 0 ? (
+            <p className="text-xs text-[var(--muted)]">
+              Completa todas las medidas requeridas para cerrar la sesion.
+            </p>
+          ) : null}
         </div>
         {formState.message ? (
           <p

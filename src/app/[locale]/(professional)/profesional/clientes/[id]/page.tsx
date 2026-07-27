@@ -18,6 +18,7 @@ import type { ReactNode } from "react";
 import { AppShell } from "@/components/app-shell";
 import { StatePanel } from "@/components/state-panel";
 import { AnthropometryMeasurementWorkflow } from "@/features/anthropometry/measurement-workflow";
+import { AnthropometryResultsPanel } from "@/features/anthropometry/results-panel";
 import { ActionForm } from "@/features/clients-agenda/action-form";
 import { clientStatusLabel } from "@/features/clients-agenda/labels";
 import { formatDateTime } from "@/features/clients-agenda/time";
@@ -451,6 +452,19 @@ function ClinicalWorkspaceView({
             protocols={workspace.anthropometryProtocols}
           />
         </div>
+        <AnthropometryResultsPanel
+          clientId={workspace.client.id}
+          locale={locale}
+          measurements={
+            latestAnthropometry
+              ? workspace.anthropometryMeasurements.filter(
+                  (measurement) => measurement.sessionId === latestAnthropometry.id
+                )
+              : []
+          }
+          previousMeasurements={previousAnthropometryMeasurements}
+          session={latestAnthropometry}
+        />
         <div className="mt-6">
           <h3 className="font-semibold">Sesiones registradas</h3>
           <div className="mt-3 grid gap-3 lg:grid-cols-2">

@@ -109,9 +109,6 @@ export async function saveAnthropometryWorkflowAction(
 
   try {
     await saveAnthropometryWorkflow(parsed.data);
-    if (parsed.data.mode === "finalize") {
-      revalidateClientRoutes(parsed.data.clientId);
-    }
     return {
       status: "success",
       message:
@@ -141,6 +138,10 @@ function readClinicalError(error: unknown) {
 
   if (error instanceof Error && error.message.includes("implausible")) {
     return "Hay valores fuera del rango tecnico plausible. Revisa unidades e instrumento.";
+  }
+
+  if (error instanceof Error && error.message.includes("incomplete anthropometry")) {
+    return "Completa todas las mediciones requeridas antes de finalizar.";
   }
 
   if (error instanceof Error && error.message.includes("locked anthropometry")) {
