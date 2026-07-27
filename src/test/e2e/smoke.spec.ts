@@ -87,6 +87,57 @@ test("professional food catalog supports search and remains accessible", async (
   await expectMainToPassAxe(page);
 });
 
+test("professional equivalences page persists macro systems and exchange foods", async ({
+  page
+}, testInfo) => {
+  await signInProfessional(page);
+  const suffix = `${testInfo.project.name}-${Date.now()}`.replace(/[^a-z0-9-]/gi, "-");
+  const systemName = `Sistema E2E ${suffix}`;
+  const groupName = `Frutas E2E ${suffix}`;
+  const foodName = `Manzana E2E ${suffix}`;
+
+  await page.goto("/es/profesional/equivalencias");
+
+  await expect(page.getByRole("heading", { name: "Equivalencias y raciones macro" })).toBeVisible();
+  await page.getByLabel("Nombre").first().fill(systemName);
+  await page.getByLabel("1 racion HC (g)").fill("10");
+  await page.getByLabel("1 racion proteina (g)").fill("7");
+  await page.getByLabel("1 racion grasa (g)").fill("5");
+  await submitByButton(page, "Crear sistema");
+  await expect(page.getByText("Sistema de raciones creado.")).toBeVisible();
+
+  await page.reload();
+  await expect(page.getByRole("heading", { name: systemName })).toBeVisible();
+
+  await page.getByLabel("Nombre").nth(1).fill(groupName);
+  await page.getByLabel("Nutriente principal").selectOption("carbohydrate");
+  await page.getByLabel("Cantidad objetivo").fill("10");
+  await page.getByLabel("Tolerancia (%)").first().fill("10");
+  await submitByButton(page, "Crear grupo");
+  await expect(page.getByText("Grupo de equivalencias creado.")).toBeVisible();
+
+  await page.reload();
+  await expect(page.getByRole("heading", { name: groupName })).toBeVisible();
+
+  await page.locator("select[name='groupId']").selectOption({ label: groupName });
+  await page.locator("input[name='foodName']").fill(foodName);
+  await page.locator("input[name='grams']").fill("130");
+  await page.locator("input[name='householdMeasure']").fill("1 pieza mediana");
+  await page.locator("input[name='energyKcal']").fill("67");
+  await page.locator("input[name='proteinG']").fill("0.3");
+  await page.locator("input[name='carbohydrateG']").fill("10");
+  await page.locator("input[name='fatG']").fill("0.2");
+  await page.locator("input[name='fiberG']").fill("2.4");
+  await submitByButton(page, "Anadir alimento");
+  await expect(page.getByText("Alimento equivalente creado.")).toBeVisible();
+
+  await page.reload();
+  await expect(page.getByText(foodName)).toBeVisible();
+  await expect(page.getByText("Dentro").first()).toBeVisible();
+  await expect(page.getByText("HC 1 · P 0,04 · G 0,04").first()).toBeVisible();
+  await expectMainToPassAxe(page);
+});
+
 test("professional clients page creates a persistent client", async ({ page }, testInfo) => {
   await signInProfessional(page);
   const suffix = `${testInfo.project.name}-${Date.now()}`.replace(/[^a-z0-9-]/gi, "-");
@@ -193,6 +244,17 @@ test("professional client record persists intake consultation and anthropometry"
 
 async function expectMainToPassAxe(page: Page) {
   expect((await new AxeBuilder({ page }).include("main").analyze()).violations).toEqual([]);
+}
+
+async function submitByButton(page: Page, name: string) {
+  const button = page.getByRole("button", { name });
+  await button.evaluate((element) => {
+    if (!(element instanceof HTMLButtonElement) || !element.form) {
+      throw new Error("Submit button is not attached to a form.");
+    }
+
+    element.form.requestSubmit(element);
+  });
 }
 
 async function fillMeasurement(
