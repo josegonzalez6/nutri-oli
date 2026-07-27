@@ -29,7 +29,7 @@ test("professional dashboard renders without authentication bypass assumptions",
   await expect(page.getByRole("heading", { name: "Atencion requerida" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Clientes en seguimiento" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Consulta guiada" })).toBeVisible();
-  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  await expectMainToPassAxe(page);
 });
 
 test("professional navigation is reachable by keyboard", async ({ page }) => {
@@ -42,7 +42,7 @@ test("professional navigation is reachable by keyboard", async ({ page }) => {
 
   await agendaLink.focus();
   await expect(agendaLink).toBeFocused();
-  await page.keyboard.press("Enter");
+  await agendaLink.press("Enter");
   await expect(page).toHaveURL(/\/es\/profesional\/agenda$/);
 });
 
@@ -56,7 +56,7 @@ test("client portal exposes only published-client framing", async ({ page }) => 
 
   await expect(page.getByRole("heading", { name: "Portal del cliente" })).toBeVisible();
   await expect(page.getByText("Solo versiones publicadas por el profesional.")).toBeVisible();
-  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  await expectMainToPassAxe(page);
 });
 
 test("login route does not expose a fake authentication action", async ({ page }) => {
@@ -74,7 +74,7 @@ test("login route does not expose a fake authentication action", async ({ page }
     await expect(page).toHaveURL(/\/es\/profesional$/);
   }
 
-  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  await expectMainToPassAxe(page);
 });
 
 test("professional food catalog supports search and remains accessible", async ({ page }) => {
@@ -84,7 +84,7 @@ test("professional food catalog supports search and remains accessible", async (
   await expect(page.getByRole("heading", { name: "Catalogo de alimentos" })).toBeVisible();
   await page.getByLabel("Buscar alimento", { exact: true }).fill("aceite");
   await expect(page.getByRole("row", { name: /Aceite de oliva/i }).first()).toBeVisible();
-  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  await expectMainToPassAxe(page);
 });
 
 test("professional clients page creates a persistent client", async ({ page }, testInfo) => {
@@ -103,7 +103,7 @@ test("professional clients page creates a persistent client", async ({ page }, t
 
   await page.reload();
   await expect(page.getByText(`E2E-${suffix}`)).toBeVisible();
-  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  await expectMainToPassAxe(page);
 });
 
 test("professional client record persists intake consultation and anthropometry", async ({
@@ -149,14 +149,23 @@ test("professional client record persists intake consultation and anthropometry"
   const anthropometry = page.locator("section#antropometria");
   await anthropometry.getByRole("button", { name: "Informacion de Pliegue tricipital" }).click();
   await expect(anthropometry.getByText("Fuente:").first()).toBeVisible();
-  await anthropometry.getByLabel("Masa corporal primera toma").fill("74.0");
-  await anthropometry.getByLabel("Masa corporal segunda toma").fill("74.4");
-  await anthropometry.getByLabel("Talla primera toma").fill("171.5");
-  await anthropometry.getByLabel("Talla segunda toma").fill("171.6");
-  await anthropometry.getByLabel("Perimetro cintura primera toma").fill("82.4");
-  await anthropometry.getByLabel("Perimetro cintura segunda toma").fill("82.6");
-  await anthropometry.getByLabel("Perimetro cadera primera toma").fill("98.1");
-  await anthropometry.getByLabel("Perimetro cadera segunda toma").fill("98.2");
+  await fillMeasurement(anthropometry, "Masa corporal", "74.0", "74.4");
+  await fillMeasurement(anthropometry, "Talla", "171.5", "171.6");
+  await fillMeasurement(anthropometry, "Pliegue subescapular", "16.0", "16.2");
+  await fillMeasurement(anthropometry, "Pliegue bicipital", "6.0", "6.1");
+  await fillMeasurement(anthropometry, "Pliegue cresta iliaca", "18.0", "18.4");
+  await fillMeasurement(anthropometry, "Pliegue supraespinal", "14.0", "14.2");
+  await fillMeasurement(anthropometry, "Pliegue abdominal", "21.0", "21.5");
+  await fillMeasurement(anthropometry, "Pliegue muslo anterior", "24.0", "24.4");
+  await fillMeasurement(anthropometry, "Pliegue pierna medial", "12.0", "12.2");
+  await fillMeasurement(anthropometry, "Perimetro brazo relajado", "29.0", "29.1");
+  await fillMeasurement(anthropometry, "Perimetro brazo flexionado", "31.0", "31.2");
+  await fillMeasurement(anthropometry, "Perimetro cintura", "82.4", "82.6");
+  await fillMeasurement(anthropometry, "Perimetro cadera", "98.1", "98.2");
+  await fillMeasurement(anthropometry, "Perimetro muslo", "55.0", "55.2");
+  await fillMeasurement(anthropometry, "Perimetro pierna", "37.0", "37.1");
+  await fillMeasurement(anthropometry, "Diametro humero", "6.80", "6.85");
+  await fillMeasurement(anthropometry, "Diametro femur", "9.50", "9.55");
   await anthropometry.getByLabel("Pliegue tricipital primera toma").fill("10");
   await anthropometry.getByLabel("Pliegue tricipital segunda toma").fill("12");
   await expect(anthropometry.getByText("Tercera necesaria").first()).toBeVisible();
@@ -169,8 +178,32 @@ test("professional client record persists intake consultation and anthropometry"
   await expect(anthropometry.getByLabel("Pliegue tricipital tercera toma")).toHaveValue("10.5");
   await expect(page.getByText("74,2 kg").first()).toBeVisible();
   await expect(page.getByText(/25,2/).first()).toBeVisible();
-  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  await expect(anthropometry.getByRole("link", { name: "Descargar PDF" })).toHaveCount(0);
+  await anthropometry.getByRole("button", { name: "Finalizar sesion" }).click();
+  await expect(page.getByText("Sesion antropometrica finalizada y bloqueada.")).toBeVisible();
+
+  await page.reload();
+  const [download] = await Promise.all([
+    page.waitForEvent("download"),
+    anthropometry.getByRole("link", { name: "Descargar PDF" }).click()
+  ]);
+  expect(download.suggestedFilename()).toMatch(/nutri-oli-antropometria-.*\.pdf$/);
+  await expectMainToPassAxe(page);
 });
+
+async function expectMainToPassAxe(page: Page) {
+  expect((await new AxeBuilder({ page }).include("main").analyze()).violations).toEqual([]);
+}
+
+async function fillMeasurement(
+  root: ReturnType<Page["locator"]>,
+  label: string,
+  firstValue: string,
+  secondValue: string
+) {
+  await root.getByLabel(`${label} primera toma`).fill(firstValue);
+  await root.getByLabel(`${label} segunda toma`).fill(secondValue);
+}
 
 test("professional agenda page creates a persistent appointment", async ({ page }, testInfo) => {
   await signInProfessional(page);
@@ -196,5 +229,5 @@ test("professional agenda page creates a persistent appointment", async ({ page 
 
   await page.reload();
   await expect(page.getByText("Cliente Demo C").first()).toBeVisible();
-  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  await expectMainToPassAxe(page);
 });

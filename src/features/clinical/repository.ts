@@ -154,6 +154,13 @@ export type AnthropometrySessionMeasurement = {
   observations: string | null;
 };
 
+export type AnthropometryReportRecord = {
+  id: string;
+  kind: "professional_internal" | "client_shared";
+  status: "generated" | "published" | "revoked";
+  version: number;
+};
+
 export type ClientTimelineItem = {
   id: string;
   kind: "appointment" | "consultation" | "anthropometry" | "intake";
@@ -796,6 +803,13 @@ export async function saveAnthropometryWorkflow(input: AnthropometryWorkflowInpu
       throw new Error("implausible anthropometry value");
     }
 
+    if (
+      input.mode === "finalize" &&
+      evaluated.some(({ evaluation }) => evaluation.finalValue === null)
+    ) {
+      throw new Error("incomplete anthropometry workflow");
+    }
+
     const summary = buildAnthropometrySummary(evaluated);
     const visibility = {
       clientCanViewWeight: input.clientCanViewWeight,
@@ -849,6 +863,85 @@ export async function saveAnthropometryWorkflow(input: AnthropometryWorkflowInpu
   });
 
   assertReadyOutcome(outcome);
+}
+
+export async function ensureAnthropometryReportGenerated(
+  clientId: string,
+  sessionId: string
+): Promise<RepositoryResult<AnthropometryReportRecord>> {
+  try {
+    const result = await withProfessionalTransaction(async (client, context) => {
+      const session = await client.query<{ id: string }>(
+        `select id
+        from public.anthropometry_sessions
+        where organization_id = $1
+          and client_id = $2
+          and id = $3
+          and workflow_status in ('completed', 'validated')
+        limit 1`,
+        [context.organizationId, clientId, sessionId]
+      );
+
+      if (!session.rows[0]) {
+        throw new Error("Anthropometry report requires a completed session.");
+      }
+
+      const report = await client.query<{
+        id: string;
+        kind: "professional_internal" | "client_shared";
+        status: "generated" | "published" | "revoked";
+        version: number;
+      }>(
+        `insert into public.anthropometry_reports (
+          organization_id,
+          client_id,
+          session_id,
+          kind,
+          status,
+          version,
+          created_by
+        )
+        values ($1, $2, $3, 'professional_internal', 'generated', 1, $4)
+        on conflict (organization_id, session_id, kind, version) do update
+        set
+          generated_at = now(),
+          updated_at = now()
+        returning id, kind, status, version`,
+        [context.organizationId, clientId, sessionId, context.profileId]
+      );
+      const row = report.rows[0];
+
+      if (!row) {
+        throw new Error("Anthropometry report could not be recorded.");
+      }
+
+      await recordClinicalAudit(client, context, "anthropometry_reports", row.id, {
+        action: "generated_for_download",
+        clientId,
+        sessionId,
+        kind: row.kind,
+        version: row.version
+      });
+
+      return {
+        status: "ready" as const,
+        data: {
+          id: row.id,
+          kind: row.kind,
+          status: row.status,
+          version: row.version
+        }
+      };
+    });
+
+    return result.status === "ready" ? result : toRepositoryResult(result);
+  } catch (error) {
+    console.error(
+      "[clinical] failed to record anthropometry report",
+      error instanceof Error ? error.message : error
+    );
+    return { status: "error", message: "Anthropometry report could not be generated." };
+  }
 }
 
 function consultationParams(
