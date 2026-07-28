@@ -2,7 +2,7 @@
 
 ## Fase actual
 
-Fase 7 parcial - Equivalencias y raciones de macronutrientes, apilada sobre PR #45 mientras PR #1/#40/#41/#42 siguen pendientes de integracion humana.
+Fase 8 parcial - Recetas y planes dieteticos persistentes, apilada sobre PR #46 mientras PR #1/#40/#41/#42/#45 siguen pendientes de integracion humana.
 
 ## Trabajo completado
 
@@ -95,19 +95,26 @@ Fase 7 parcial - Equivalencias y raciones de macronutrientes, apilada sobre PR #
 - Pantalla profesional `/es/profesional/equivalencias` implementada y enlazada en el sidebar: crea sistemas de raciones, grupos de equivalencia, alimentos equivalentes y objetivos por comida con persistencia real en Supabase.
 - E2E ampliado para crear un sistema macro, crear un grupo, anadir un alimento, recargar y verificar raciones calculadas y ajuste dentro de tolerancia en escritorio y movil.
 - PR #46 abierta: `https://github.com/josegonzalez6/nutri-oli/pull/46`, base `feat/anthropometry-results-report`, head `feat/macro-exchanges-foundation`.
+- Rama `feat/recipes-plans-foundation` creada sobre `feat/macro-exchanges-foundation`.
+- Motor nutricional comun de recetas y planes extraido a `src/features/planning/planning-engine.ts`; mantiene nutrientes ausentes como `null` y expone cobertura de datos.
+- Migracion `202607270003_recipes_plans_foundation.sql` creada con recetas, ingredientes, planes, comidas, alimentos, version/status y FKs compuestas por organizacion.
+- RLS de recetas y planes limitada a owner/nutritionist; assistant no puede leer ni escribir. Todas las mutaciones server-side se auditan.
+- Pantallas persistentes `/es/profesional/recetas` y `/es/profesional/planes` implementadas con formularios Zod, estados de configuracion/error/vacio, totales nutricionales y datos de cliente.
+- E2E ampliado para crear receta, ingrediente, plan, comida y alimento, recargar y comprobar persistencia y axe.
+- PR #47 abierta: `https://github.com/josegonzalez6/nutri-oli/pull/47`, base `feat/macro-exchanges-foundation`, head `feat/recipes-plans-foundation`; checks remotos `web` y `database` verdes.
 
 ## Trabajo pendiente
 
 - Validacion clinica, ISAK y juridica por profesionales humanos antes de produccion.
 - Revision de licencia BEDCA antes de distribuir datos o usarlos en produccion.
 - Completar Auth real: invitaciones, recuperacion, verificacion, MFA profesional, revocacion, proteccion estricta por rol y portal cliente autenticado.
-- El portal cliente, planes, recetas, mensajes, documentos, consentimientos y notificaciones siguen sin vertical persistente operativa.
+- El portal cliente, mensajes, documentos, consentimientos y notificaciones siguen sin vertical persistente operativa.
 - Equivalencias y raciones macro tienen fundacion persistente, pero faltan versionado avanzado, asignacion a cliente, impresion/publicacion, generador asistido, integracion con editor de dietas y portal.
 - Completar antropometria con TEM, addenda UI, resultados longitudinales avanzados, graficos avanzados, PDF paginado completo, publicacion granular al cliente y ecuaciones predictivas verificadas.
 - Convertir anamnesis en plantillas editables/enviables al portal con versionado completo.
 - Convertir consultas finalizadas en documentos compartibles con addenda UI y adjuntos.
 - Corregir o revisar en PR #40 cualquier hallazgo de seguridad restante antes de retargetear/fusionar.
-- No abrir una tercera vertical apilada hasta resolver PR #1 o definir una estrategia explicita que no agrave dependencias.
+- La cadena de PR sigue apilada: esta vertical depende de PR #46 y, transitivamente, de PR #45/#42/#41/#40/#1.
 
 ## Bloqueos
 
@@ -124,7 +131,7 @@ Fase 7 parcial - Equivalencias y raciones de macronutrientes, apilada sobre PR #
 - Dashboard, clientes y agenda ya leen/escriben Supabase en esta rama; portal, planes, mensajes y documentos siguen siendo demo/no persistentes.
 - El acceso applicativo actual usa configuracion server-only de workspace profesional; RLS esta implementado y probado en SQL, pero falta conectar Auth real a las queries de usuario final.
 - `main` sigue en el commit base `65117ed`; la fundacion real del producto aun no esta integrada.
-- La nueva rama es una tercera PR apilada por instruccion explicita de continuar; depende de la integracion de PR #1 y PR #40.
+- La rama `feat/recipes-plans-foundation` es una septima capa apilada por instruccion explicita de continuar.
 - La rama `feat/anthropometry-measurement-workflow` es una cuarta capa apilada y depende de PR #41, que a su vez depende de PR #40.
 - La rama `feat/anthropometry-results-report` es una quinta capa apilada y depende de PR #42.
 - La rama `feat/macro-exchanges-foundation` es una sexta capa apilada y depende de PR #45.
@@ -142,16 +149,16 @@ Fase 7 parcial - Equivalencias y raciones de macronutrientes, apilada sobre PR #
 - `corepack pnpm format:check`: PASS.
 - `corepack pnpm lint`: PASS.
 - `corepack pnpm typecheck`: PASS.
-- `corepack pnpm test`: PASS, 9 archivos y 37 tests.
+- `corepack pnpm test`: PASS, 10 archivos y 40 tests.
 - `corepack pnpm build`: PASS, incluye ruta dinamica `/[locale]/profesional/clientes/[id]/antropometria/[sessionId]/informe` y `/[locale]/profesional/equivalencias`.
-- `supabase db reset`: PASS con migraciones hasta `202607270001_anthropometry_reports.sql`.
+- `supabase db reset`: PASS con migraciones hasta `202607270003_recipes_plans_foundation.sql`.
 - `corepack pnpm bedca:import /Users/josegonzalez/Documents/Proyectos/NUTRI/data/bedca.xlsx --database-url=<local Supabase DB_URL>`: PASS, 957 alimentos importados localmente.
-- `supabase test db`: PASS, 5 archivos y 79 tests.
+- `supabase test db`: PASS, 6 archivos y 96 tests.
 - `supabase db lint --schema public,private --fail-on error`: PASS.
-- `corepack pnpm test:e2e`: PASS, 18 tests en Chromium y mobile con axe en `main`, Supabase Auth real local y `auth.getUser()`; valida login, CRUD cliente, cita persistente, ayuda antropometrica, tercera medicion, persistencia con recarga, finalizacion, descarga PDF y equivalencias/raciones macro persistentes.
+- `corepack pnpm test:e2e`: PASS, 22 tests en Chromium y mobile con axe en `main`, Supabase Auth real local y `auth.getUser()`; valida login, CRUD cliente, cita persistente, ayuda antropometrica, tercera medicion, persistencia con recarga, finalizacion, descarga PDF, equivalencias/raciones macro, recetas e items de planes persistentes.
 - `corepack pnpm audit --audit-level moderate`: PASS, sin vulnerabilidades conocidas.
 - Secret scan rapido con `rg`: sin secretos reales; solo placeholders en `.env.example` y referencias `env(...)` de Supabase local.
 
 ## Proxima accion automatica
 
-- Continuar con recetas persistentes y editor inicial de dietas sobre la rama apilada siguiente, manteniendo dependencia de PR #1/#40/#41/#42/#45/#46.
+- Completar gates, abrir PR #47 y continuar con versionado/publicacion y portal cliente de planes.

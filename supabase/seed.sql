@@ -30,8 +30,8 @@ values (
   '00000000-0000-0000-0000-000000000000',
   'authenticated',
   'authenticated',
-  'professional.demo@nutri-oli.test',
-  crypt('NutriOliDemo123!', gen_salt('bf')),
+  'jose@nutri-oli.test',
+  crypt('gonzalez', gen_salt('bf')),
   now(),
   '',
   '',
@@ -77,9 +77,9 @@ insert into auth.identities (
 )
 values (
   '00000000-0000-4000-8000-000000000010',
-  'professional.demo@nutri-oli.test',
+  'jose@nutri-oli.test',
   '00000000-0000-4000-8000-000000000010',
-  '{"sub":"00000000-0000-4000-8000-000000000010","email":"professional.demo@nutri-oli.test","email_verified":true,"phone_verified":false}'::jsonb,
+  '{"sub":"00000000-0000-4000-8000-000000000010","email":"jose@nutri-oli.test","email_verified":true,"phone_verified":false}'::jsonb,
   'email',
   now(),
   now(),
@@ -93,7 +93,7 @@ insert into public.profiles (id, full_name, email, preferred_locale)
 values (
   '00000000-0000-4000-8000-000000000010',
   'Profesional Demo',
-  'professional.demo@nutri-oli.test',
+  'jose@nutri-oli.test',
   'es'
 )
 on conflict (id) do update set full_name = excluded.full_name, email = excluded.email;

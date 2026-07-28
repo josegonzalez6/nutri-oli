@@ -3,8 +3,8 @@ import { expect, test } from "@playwright/test";
 import type { Page } from "@playwright/test";
 
 const authConfigured = Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL);
-const demoEmail = "professional.demo@nutri-oli.test";
-const demoPassword = "NutriOliDemo123!";
+const demoEmail = "jose";
+const demoPassword = "gonzalez";
 
 async function signInProfessional(page: Page) {
   if (!authConfigured) {
@@ -135,6 +135,77 @@ test("professional equivalences page persists macro systems and exchange foods",
   await expect(page.getByText(foodName)).toBeVisible();
   await expect(page.getByText("Dentro").first()).toBeVisible();
   await expect(page.getByText("HC 1 · P 0,04 · G 0,04").first()).toBeVisible();
+  await expectMainToPassAxe(page);
+});
+
+test("professional recipes page persists ingredients and nutrient completeness", async ({
+  page
+}, testInfo) => {
+  await signInProfessional(page);
+  const suffix = `${testInfo.project.name}-${Date.now()}`.replace(/[^a-z0-9-]/gi, "-");
+  const recipeName = `Receta E2E ${suffix}`;
+  const ingredientName = `Arroz E2E ${suffix}`;
+
+  await page.goto("/es/profesional/recetas");
+  await expect(page.getByRole("heading", { name: "Recetas persistentes" })).toBeVisible();
+  await page.getByLabel("Nombre").first().fill(recipeName);
+  await page.getByLabel("Raciones").fill("2");
+  await page.getByLabel("Patron alimentario").fill("Mediterraneo");
+  await submitByButton(page, "Crear receta");
+  await expect(page.getByText("Receta creada.")).toBeVisible();
+
+  await page.reload();
+  await expect(page.getByRole("heading", { name: recipeName })).toBeVisible();
+  await page.locator("input[name='foodName']").fill(ingredientName);
+  await page.getByLabel("Gramos").fill("80");
+  await page.getByLabel("Energia (kcal)").fill("280");
+  await page.getByLabel("Proteina (g)").fill("5");
+  await page.getByLabel("Hidratos (g)").fill("60");
+  await page.getByLabel("Grasa (g)").fill("1");
+  await submitByButton(page, "Añadir ingrediente");
+  await expect(page.getByText("Ingrediente anadido.")).toBeVisible();
+
+  await page.reload();
+  await expect(page.getByText(ingredientName)).toBeVisible();
+  await expect(page.getByText("80% datos").first()).toBeVisible();
+  await expectMainToPassAxe(page);
+});
+
+test("professional plans page persists a draft meal and food", async ({ page }, testInfo) => {
+  await signInProfessional(page);
+  const suffix = `${testInfo.project.name}-${Date.now()}`.replace(/[^a-z0-9-]/gi, "-");
+  const planName = `Plan E2E ${suffix}`;
+  const foodName = `Avena E2E ${suffix}`;
+
+  await page.goto("/es/profesional/planes");
+  await expect(page.getByRole("heading", { name: "Planes dieteticos persistentes" })).toBeVisible();
+  await page
+    .locator("select[name='clientId']")
+    .selectOption("00000000-0000-4000-8000-000000000201");
+  await page.getByRole("textbox", { name: "Nombre", exact: true }).fill(planName);
+  await submitByButton(page, "Crear plan");
+  await expect(page.getByText("Plan creado como borrador.")).toBeVisible();
+
+  await page.reload();
+  await expect(page.getByRole("heading", { name: planName })).toBeVisible();
+  await page.getByLabel("Nombre de comida").fill("Desayuno E2E");
+  await submitByButton(page, "Añadir comida");
+  await expect(page.getByText("Comida anadida.")).toBeVisible();
+
+  await page.reload();
+  await page.getByLabel("Alimento o descripcion").fill(foodName);
+  await page.getByLabel("Gramos").fill("60");
+  await page.getByLabel("Energia (kcal)").fill("228");
+  await page.getByLabel("Proteina (g)").fill("8");
+  await page.getByLabel("Hidratos (g)").fill("38");
+  await page.getByLabel("Grasa (g)").fill("4");
+  await page.getByLabel("Fibra (g)").fill("6");
+  await submitByButton(page, "Añadir alimento");
+  await expect(page.getByText("Alimento anadido al plan.")).toBeVisible();
+
+  await page.reload();
+  await expect(page.getByText(foodName)).toBeVisible();
+  await expect(page.getByText("100% datos").first()).toBeVisible();
   await expectMainToPassAxe(page);
 });
 

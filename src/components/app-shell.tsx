@@ -1,6 +1,7 @@
 import Link from "next/link";
 import {
   Apple,
+  BookOpen,
   CalendarDays,
   ChevronRight,
   ClipboardList,
@@ -71,7 +72,21 @@ export function AppShell({
           : `/${locale}/${basePath}#equivalencias`,
       label: "Equivalencias",
       icon: <Scale aria-hidden="true" />
-    }
+    },
+    ...(section === "professional"
+      ? [
+          {
+            href: `/${locale}/profesional/recetas`,
+            label: "Recetas",
+            icon: <BookOpen aria-hidden="true" />
+          },
+          {
+            href: `/${locale}/profesional/planes`,
+            label: "Planes",
+            icon: <ClipboardList aria-hidden="true" />
+          }
+        ]
+      : [])
   ];
 
   return (

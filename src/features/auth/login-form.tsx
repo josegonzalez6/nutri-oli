@@ -27,8 +27,8 @@ export function LoginForm({ locale }: { locale: string }) {
     >
       <input name="locale" type="hidden" value={locale} />
       <label className="grid gap-2 text-sm font-medium">
-        Email
-        <input autoComplete="email" className={inputClass} name="email" required type="email" />
+        Usuario o email
+        <input autoComplete="username" className={inputClass} name="email" required />
       </label>
       <label className="grid gap-2 text-sm font-medium">
         Contrasena
