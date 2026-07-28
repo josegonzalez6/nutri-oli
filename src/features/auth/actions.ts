@@ -10,13 +10,15 @@ export type AuthFormState = {
 };
 
 export async function signInAction(_: AuthFormState, formData: FormData): Promise<AuthFormState> {
-  const email = String(formData.get("email") ?? "").trim();
+  const login = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
   const locale = String(formData.get("locale") ?? "es");
 
-  if (!email || !password) {
+  if (!login || !password) {
     return { status: "error", message: "Introduce email y contrasena." };
   }
+
+  const email = login.toLowerCase() === "jose" ? "jose@nutri-oli.test" : login;
 
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithPassword({ email, password });

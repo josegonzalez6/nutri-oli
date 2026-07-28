@@ -3,8 +3,8 @@ import { expect, test } from "@playwright/test";
 import type { Page } from "@playwright/test";
 
 const authConfigured = Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL);
-const demoEmail = "professional.demo@nutri-oli.test";
-const demoPassword = "NutriOliDemo123!";
+const demoEmail = "jose";
+const demoPassword = "gonzalez";
 
 async function signInProfessional(page: Page) {
   if (!authConfigured) {
